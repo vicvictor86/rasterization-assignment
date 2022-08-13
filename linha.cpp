@@ -216,27 +216,32 @@ void bresenham(double x1,double y1,double x2,double y2){
     double xi = x1;
     double yi = y1;
 
-    pontos = pushPonto((int)xi, (int)yi);
+    bool firstExtremity = true;
     while(xi < x2){
-        if(distance <= 0){
+        if(!firstExtremity){
+            if(distance <= 0){
             distance += incrementE;
-        }else {
-            distance += incrementNE;
-            yi++;
+            }else {
+                distance += incrementNE;
+                yi++;
+            }
+            xi++;
         }
-    
-        xi++;
-    
+
         pontos = pushPonto((int)xi, (int)yi);
         printf("xiyi(%.0f,%.0f)\n", xi, yi);
+
+        firstExtremity = false;
     }
 }
 
 void firstOctaveRedution(double x1, double y1, double x2, double y2){
     bool declive = false;
     bool simetric = false;
+
     double delta_x = x2 - x1;
     double delta_y = y2 - y1;
+
     double productDeltas = delta_x * delta_y;
 
     if(productDeltas < 0){
@@ -280,44 +285,43 @@ void firstOctaveRedution(double x1, double y1, double x2, double y2){
     double distance = 2 * delta_y - delta_x;
     double incrementE = 2 * delta_y;
     double incrementNE = 2 * (delta_y - delta_x);
+
     double xi = x1;
     double yi = y1;
+
     double tempXi = xi;
     double tempYi = yi;
 
-    if(declive){
-        double aux = tempXi;
-        tempXi = tempYi;
-        tempYi = aux;
-    }
-
-    if(simetric){
-        tempYi *= -1;
-    }
-
-    pontos = pushPonto((int)tempXi, (int)tempYi);
-    printf("xiyi(%.0f,%.0f)\n", tempXi, tempYi);
+    bool firstExtremity = true;
+    printf("Primeiro xiyi(%.0f,%.0f)\n", tempXi, tempYi);
 
     while(xi < x2){
-        if(distance <= 0){
-            distance += incrementE;
-        }else {
-            distance += incrementNE;
-            yi++;
+        if(!firstExtremity){
+            if(distance <= 0){
+                distance += incrementE;
+            }else {
+                distance += incrementNE;
+                yi++;
+            }
+            xi++;
         }
-        
-        xi++;
+
         if(declive){
             tempXi = yi;
             tempYi = xi;
+        } else {
+            tempXi = xi;
+            tempYi = yi;
         }
 
         if(simetric){
             tempYi *= -1;
-        }
-
+        } 
+        
         pontos = pushPonto((int)tempXi, (int)tempYi);
         printf("xiyi(%.0f,%.0f)\n", tempXi, tempYi);
+
+        firstExtremity = false;
     }
 }
 
