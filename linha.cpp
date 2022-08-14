@@ -19,14 +19,11 @@
 #include <bits/stdc++.h>
 using namespace std; 
 
-// Variaveis Globais
-bool click1 = false, click2 = false, click3 = false;
-
-double x_1,y_1,x_2,y_2,x_3,y_3;
-
 int quantityClicks = 0;
 
 int width = 512, height = 512; //Largura e altura da janela
+
+char drawStatus = 'T';
 
 // Estrututa de dados para o armazenamento dinamico dos pontos
 // selecionados pelos algoritmos de rasterizacao
@@ -119,9 +116,6 @@ void reshape(int w, int h)
    // muda para o modo GL_MODELVIEW (n�o pretendemos alterar a projec��o
    // quando estivermos a desenhar na tela)
 	glMatrixMode(GL_MODELVIEW);
-    // click1 = true; //Para redesenhar os pixels selecionados
-    // click2 = true;
-    // click3 = true;
 }
 
 // Funcao usada na funcao callback para utilizacao das teclas normais do teclado
@@ -139,9 +133,12 @@ void mouse(int button, int state, int x, int y)
    switch (button) {
       case GLUT_LEFT_BUTTON:
         if (state == GLUT_DOWN) {
-            pointsToDrawnTriangle[quantityClicks].x = x;
-            pointsToDrawnTriangle[quantityClicks].y = height - y;
-            quantityClicks++;
+            if(drawStatus == 'T' && quantityClicks < 3){
+                pointsToDrawnTriangle[quantityClicks].x = x;
+                pointsToDrawnTriangle[quantityClicks].y = height - y;
+                quantityClicks++;
+                printf("Point registered: %d %d\n", x, y);
+            }
         }
         break;
 
@@ -150,6 +147,7 @@ void mouse(int button, int state, int x, int y)
         //         glutPostRedisplay();
         //     }
         // break;
+
         case GLUT_RIGHT_BUTTON:
             if (state == GLUT_DOWN) {
                 glutPostRedisplay();
@@ -168,29 +166,22 @@ void display(void){
     
     glColor3f (0.0, 0.0, 0.0); // Seleciona a cor default como preto
 
-    // if(click1 && click2 && click3){
-        if(quantityClicks > 0){
-            firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
-            firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
-            firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+    if(quantityClicks > 0){
+        firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
+        firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
+        firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
 
-            // bresenham(x_1, y_1, x_2, y_2);
-            // bresenham(x_2, y_2, x_3, y_3);
-            // bresenham(x_3, y_3, x_1, y_1);
+        // bresenham(x_1, y_1, x_2, y_2);
+        // bresenham(x_2, y_2, x_3, y_3);
+        // bresenham(x_3, y_3, x_1, y_1);
 
-            // retaImediata(x_1, y_1, x_2, y_2);
-            // retaImediata(x_2, y_2, x_3, y_3);
-            // retaImediata(x_3, y_3, x_1, y_1);
-            
-            //Para resolver esse problema deve-se copiar o código da reta imediata no que diz ao cálculo das tangentes
-            drawPontos();
-            // click1 = false;
-            // click2 = false;
-            // click3 = false;
-            quantityClicks = 0;
-        }
+        // retaImediata(x_1, y_1, x_2, y_2);
+        // retaImediata(x_2, y_2, x_3, y_3);
+        // retaImediata(x_3, y_3, x_1, y_1);
         
-    // }
+        drawPontos();
+        quantityClicks = 0;
+    }
 
     glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
 
@@ -232,7 +223,7 @@ void bresenham(int x1,int y1,int x2,int y2){
         }
 
         pontos = pushPonto((int)xi, (int)yi);
-        printf("xiyi(%d,%d)\n", xi, yi);
+        // printf("xiyi(%d,%d)\n", xi, yi);
 
         firstExtremity = false;
     }
@@ -296,7 +287,7 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
     int tempYi = yi;
 
     bool firstExtremity = true;
-    printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
+    // printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
 
     while(xi < x2){
         if(!firstExtremity){
@@ -322,7 +313,7 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
         } 
         
         pontos = pushPonto(tempXi, tempYi);
-        printf("xiyi(%d,%d)\n", tempXi, tempYi);
+        // printf("xiyi(%d,%d)\n", tempXi, tempYi);
 
         firstExtremity = false;
     }
