@@ -242,6 +242,7 @@ void bresenham(int x1,int y1,int x2,int y2){
     bool firstExtremity = true;
     while(xi < x2){
         if(!firstExtremity){
+            if(!firstExtremity){
             if(distance <= 0){
             distance += incrementE;
             }else {
@@ -320,11 +321,14 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
 
     while(xi < x2){
         if(!firstExtremity){
+            if(!firstExtremity){
             if(distance <= 0){
-                distance += incrementE;
-            }else {
-                distance += incrementNE;
-                yi++;
+                    distance += incrementE;
+                }else {
+                    distance += incrementNE;
+                    yi++;
+            }
+            xi++;
             }
             xi++;
         }
@@ -332,6 +336,9 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
         if(declive){
             tempXi = yi;
             tempYi = xi;
+        } else {
+            tempXi = xi;
+            tempYi = yi;
         } else {
             tempXi = xi;
             tempYi = yi;
