@@ -15,14 +15,15 @@
 #include <cstdio>
 #include <cstdlib>
 
-// Variaveis Globais
-bool click1 = false, click2 = false;
+#include<iostream> 
+#include <bits/stdc++.h>
+using namespace std; 
 
-double x_1,y_1,x_2,y_2;
-
-int quantityClicks = -1;
+int quantityClicks = 0;
 
 int width = 512, height = 512; //Largura e altura da janela
+
+string drawStatus = "TRIANGLE";
 
 // Estrututa de dados para o armazenamento dinamico dos pontos
 // selecionados pelos algoritmos de rasterizacao
@@ -32,11 +33,13 @@ struct ponto{
     ponto * prox;
 };
 
+ponto pointsToDrawnTriangle[3] = {};
+ponto pointsToDrawnLine[2] = {};
+
 // Lista encadeada de pontos
 // indica o primeiro elemento da lista
 ponto * pontos = NULL;
 
-ponto pointToTriangle[3] = {};
 
 // Funcao para armazenar um ponto na lista
 // Armazena como uma Pilha (empilha)
@@ -74,11 +77,12 @@ void mouse(int button, int state, int x, int y);
 void retaImediata(double x1,double y1,double x2,double y2);
 // Funcao que percorre a lista de pontos desenhando-os na tela
 void drawPontos();
-void bresenham(double x1,double y1,double x2,double y2);
-void firstOctaveRedution(double x1,double y1,double x2,double y2);
+void bresenham(int x1,int y1,int x2,int y2);
+void firstOctaveReduction(int x1,int y1,int x2,int y2);
 
 // Funcao Principal do C
 int main(int argc, char** argv){
+    printf("Desenhar triangulo\n");
     glutInit(&argc, argv); // Passagens de parametro C para o glut
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor utilizado
     glutInitWindowSize (width, height);  // Tamanho da janela do OpenGL
@@ -114,8 +118,6 @@ void reshape(int w, int h)
    // muda para o modo GL_MODELVIEW (n�o pretendemos alterar a projec��o
    // quando estivermos a desenhar na tela)
 	glMatrixMode(GL_MODELVIEW);
-    click1 = true; //Para redesenhar os pixels selecionados
-    click2 = true;
 }
 
 // Funcao usada na funcao callback para utilizacao das teclas normais do teclado
@@ -123,6 +125,18 @@ void keyboard(unsigned char key, int x, int y){
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
+        break;
+        case 84:
+            drawStatus = "TRIANGLE";
+            printf("Desenhar triangulo\n");
+        break;
+        case 108:
+            drawStatus = "LINE_BRESENHAM";
+            printf("Desenhar linha usando Bresenham\n");
+        break;
+        case 111:
+            drawStatus = "LINE_REDUCTION_OCTAVE";
+            printf("Desenhar linha usando reducao ao primeiro octante \n");
         break;
     }
 }
@@ -133,34 +147,38 @@ void mouse(int button, int state, int x, int y)
    switch (button) {
       case GLUT_LEFT_BUTTON:
         if (state == GLUT_DOWN) {
-            if(click1){
-                click2 = true;
-                x_2 = x;
-                y_2 = height - y;
-                printf("x2y2(%.0f,%.0f)\n",x_2,y_2);
-                glutPostRedisplay();
-            }else{
-                click1 = true;
-                x_1 = x;
-                y_1 = height - y;
-                printf("x1y1(%.0f,%.0f)\n",x_1,y_1);
+            if(drawStatus == "TRIANGLE" && quantityClicks < 3){
+                pointsToDrawnTriangle[quantityClicks].x = x;
+                pointsToDrawnTriangle[quantityClicks].y = height - y;
+                quantityClicks++;
+                printf("Ponto registrado %d %d\n", x, y);
+
+            } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE") && quantityClicks < 2){
+                pointsToDrawnLine[quantityClicks].x = x;
+                pointsToDrawnLine[quantityClicks].y = height - y;
+                quantityClicks++;
+                printf("Ponto registrado %d %d\n", x, y);
+
+            } else {
+                printf("Numero maximo de pontos registrados\n");
             }
         }
         break;
-/*
-      case GLUT_MIDDLE_BUTTON:
-         if (state == GLUT_DOWN) {
-            glutPostRedisplay();
-         }
-         break;
-      case GLUT_RIGHT_BUTTON:
-         if (state == GLUT_DOWN) {
-            glutPostRedisplay();
-         }
-         break;
-*/
-      default:
-         break;
+
+        // case GLUT_MIDDLE_BUTTON:
+        //     if (state == GLUT_DOWN) {
+        //         glutPostRedisplay();
+        //     }
+        // break;
+
+        case GLUT_RIGHT_BUTTON:
+            if (state == GLUT_DOWN) {
+                glutPostRedisplay();
+            }
+        break;
+
+        default:
+            break;
    }
 }
 
@@ -170,23 +188,28 @@ void display(void){
     glLoadIdentity();
     
     glColor3f (0.0, 0.0, 0.0); // Seleciona a cor default como preto
-    
-    if(click1 || click2){
-        // quantityClicks++;
-        // printf("Clicks %d\n", quantityClicks);
-        // pointToTriangle[quantityClicks] = 
-        // if(quantityClicks == 3){
-            
-        // }
-    }
-    if(click1 && click2){
+
+    if(quantityClicks > 0){
+        if(drawStatus == "TRIANGLE"){
+            firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
+            firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
+            firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+        } else if(drawStatus == "LINE_BRESENHAM"){
+            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+        } else if(drawStatus == "LINE_REDUCTION_OCTAVE"){
+            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+        }
+
+        // bresenham(x_1, y_1, x_2, y_2);
+        // bresenham(x_2, y_2, x_3, y_3);
+        // bresenham(x_3, y_3, x_1, y_1);
+
+        // retaImediata(x_1, y_1, x_2, y_2);
+        // retaImediata(x_2, y_2, x_3, y_3);
+        // retaImediata(x_3, y_3, x_1, y_1);
         
-        // firstOctaveRedution(x_1, y_1, x_2, y_2);
-        bresenham(x_1, y_1, x_2, y_2);
-        // retaImediata(x_1,y_1,x_2,y_2);
         drawPontos();
-        click1 = false;
-        click2 = false;
+        quantityClicks = 0;
     }
 
     glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
@@ -205,39 +228,44 @@ void drawPontos(){
     glEnd();  // indica o fim do desenho
 }
 
-void bresenham(double x1,double y1,double x2,double y2){
-    double delta_x = x2 - x1;
-    double delta_y = y2 - y1;
-    double distance = 2 * delta_y - delta_x;
+void bresenham(int x1,int y1,int x2,int y2){
+    int delta_x = x2 - x1;
+    int delta_y = y2 - y1;
+    int distance = 2 * delta_y - delta_x;
     
-    double incrementE = 2 * delta_y;
-    double incrementNE = 2 * (delta_y - delta_x);
+    int incrementE = 2 * delta_y;
+    int incrementNE = 2 * (delta_y - delta_x);
     
-    double xi = x1;
-    double yi = y1;
+    int xi = x1;
+    int yi = y1;
 
-    pontos = pushPonto((int)xi, (int)yi);
+    bool firstExtremity = true;
     while(xi < x2){
-        if(distance <= 0){
+        if(!firstExtremity){
+            if(distance <= 0){
             distance += incrementE;
-        }else {
-            distance += incrementNE;
-            yi++;
+            }else {
+                distance += incrementNE;
+                yi++;
+            }
+            xi++;
         }
-    
-        xi++;
-    
+
         pontos = pushPonto((int)xi, (int)yi);
-        printf("xiyi(%.0f,%.0f)\n", xi, yi);
+        // printf("xiyi(%d,%d)\n", xi, yi);
+
+        firstExtremity = false;
     }
 }
 
-void firstOctaveRedution(double x1, double y1, double x2, double y2){
+void firstOctaveReduction(int x1, int y1, int x2, int y2){
     bool declive = false;
     bool simetric = false;
-    double delta_x = x2 - x1;
-    double delta_y = y2 - y1;
-    double productDeltas = delta_x * delta_y;
+
+    int delta_x = x2 - x1;
+    int delta_y = y2 - y1;
+
+    int productDeltas = delta_x * delta_y;
 
     if(productDeltas < 0){
         y1 *= -1;
@@ -248,15 +276,15 @@ void firstOctaveRedution(double x1, double y1, double x2, double y2){
 
     bool deltaXMinorDeltaY = abs(delta_x) < abs(delta_y);
     if(deltaXMinorDeltaY){
-        double aux1 = x1;
+        int aux1 = x1;
         x1 = y1;
         y1 = aux1;
 
-        double aux2 = x2;
+        int aux2 = x2;
         x2 = y2;
         y2 = aux2;
 
-        double auxDelta = delta_x;
+        int auxDelta = delta_x;
         delta_x = delta_y;
         delta_y = auxDelta;
 
@@ -265,11 +293,11 @@ void firstOctaveRedution(double x1, double y1, double x2, double y2){
 
     bool xFirstExtremityBiggerSecond = x1 > x2;
     if(xFirstExtremityBiggerSecond){
-        double auxX = x1;
+        int auxX = x1;
         x1 = x2;
         x2 = auxX;
 
-        double auxY = y1;
+        int auxY = y1;
         y1 = y2;
         y2 = auxY;
 
@@ -277,47 +305,46 @@ void firstOctaveRedution(double x1, double y1, double x2, double y2){
         delta_y = y2 - y1;
     }
 
-    double distance = 2 * delta_y - delta_x;
-    double incrementE = 2 * delta_y;
-    double incrementNE = 2 * (delta_y - delta_x);
-    double xi = x1;
-    double yi = y1;
-    double tempXi = xi;
-    double tempYi = yi;
+    int distance = 2 * delta_y - delta_x;
+    int incrementE = 2 * delta_y;
+    int incrementNE = 2 * (delta_y - delta_x);
 
-    if(declive){
-        double aux = tempXi;
-        tempXi = tempYi;
-        tempYi = aux;
-    }
+    int xi = x1;
+    int yi = y1;
 
-    if(simetric){
-        tempYi *= -1;
-    }
+    int tempXi = xi;
+    int tempYi = yi;
 
-    pontos = pushPonto((int)tempXi, (int)tempYi);
-    printf("xiyi(%.0f,%.0f)\n", tempXi, tempYi);
+    bool firstExtremity = true;
+    // printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
 
     while(xi < x2){
-        if(distance <= 0){
-            distance += incrementE;
-        }else {
-            distance += incrementNE;
-            yi++;
+        if(!firstExtremity){
+            if(distance <= 0){
+                distance += incrementE;
+            }else {
+                distance += incrementNE;
+                yi++;
+            }
+            xi++;
         }
-        
-        xi++;
+
         if(declive){
             tempXi = yi;
             tempYi = xi;
+        } else {
+            tempXi = xi;
+            tempYi = yi;
         }
 
         if(simetric){
             tempYi *= -1;
-        }
+        } 
+        
+        pontos = pushPonto(tempXi, tempYi);
+        // printf("xiyi(%d,%d)\n", tempXi, tempYi);
 
-        pontos = pushPonto((int)tempXi, (int)tempYi);
-        printf("xiyi(%.0f,%.0f)\n", tempXi, tempYi);
+        firstExtremity = false;
     }
 }
 
