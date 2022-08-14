@@ -23,7 +23,7 @@ int quantityClicks = 0;
 
 int width = 512, height = 512; //Largura e altura da janela
 
-char drawStatus = 'T';
+string drawStatus = "TRIANGLE";
 
 // Estrututa de dados para o armazenamento dinamico dos pontos
 // selecionados pelos algoritmos de rasterizacao
@@ -34,6 +34,7 @@ struct ponto{
 };
 
 ponto pointsToDrawnTriangle[3] = {};
+ponto pointsToDrawnLine[2] = {};
 
 // Lista encadeada de pontos
 // indica o primeiro elemento da lista
@@ -81,6 +82,7 @@ void firstOctaveReduction(int x1,int y1,int x2,int y2);
 
 // Funcao Principal do C
 int main(int argc, char** argv){
+    printf("Desenhar triangulo\n");
     glutInit(&argc, argv); // Passagens de parametro C para o glut
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor utilizado
     glutInitWindowSize (width, height);  // Tamanho da janela do OpenGL
@@ -124,6 +126,18 @@ void keyboard(unsigned char key, int x, int y){
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
         break;
+        case 84:
+            drawStatus = "TRIANGLE";
+            printf("Desenhar triangulo\n");
+        break;
+        case 108:
+            drawStatus = "LINE_BRESENHAM";
+            printf("Desenhar linha usando Bresenham\n");
+        break;
+        case 111:
+            drawStatus = "LINE_REDUCTION_OCTAVE";
+            printf("Desenhar linha usando reducao ao primeiro octante \n");
+        break;
     }
 }
 
@@ -133,11 +147,20 @@ void mouse(int button, int state, int x, int y)
    switch (button) {
       case GLUT_LEFT_BUTTON:
         if (state == GLUT_DOWN) {
-            if(drawStatus == 'T' && quantityClicks < 3){
+            if(drawStatus == "TRIANGLE" && quantityClicks < 3){
                 pointsToDrawnTriangle[quantityClicks].x = x;
                 pointsToDrawnTriangle[quantityClicks].y = height - y;
                 quantityClicks++;
-                printf("Point registered: %d %d\n", x, y);
+                printf("Ponto registrado %d %d\n", x, y);
+
+            } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE") && quantityClicks < 2){
+                pointsToDrawnLine[quantityClicks].x = x;
+                pointsToDrawnLine[quantityClicks].y = height - y;
+                quantityClicks++;
+                printf("Ponto registrado %d %d\n", x, y);
+
+            } else {
+                printf("Numero maximo de pontos registrados\n");
             }
         }
         break;
@@ -167,9 +190,15 @@ void display(void){
     glColor3f (0.0, 0.0, 0.0); // Seleciona a cor default como preto
 
     if(quantityClicks > 0){
-        firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
-        firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
-        firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+        if(drawStatus == "TRIANGLE"){
+            firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
+            firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
+            firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+        } else if(drawStatus == "LINE_BRESENHAM"){
+            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+        } else if(drawStatus == "LINE_REDUCTION_OCTAVE"){
+            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+        }
 
         // bresenham(x_1, y_1, x_2, y_2);
         // bresenham(x_2, y_2, x_3, y_3);
