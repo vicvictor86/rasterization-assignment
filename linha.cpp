@@ -138,6 +138,10 @@ void keyboard(unsigned char key, int x, int y){
             drawStatus = "LINE_REDUCTION_OCTAVE";
             printf("Desenhar linha usando reducao ao primeiro octante \n");
         break;
+        case 115:
+            drawStatus = "SQUARE";
+            printf("Desenhar quadrado\n");
+        break;
     }
 }
 
@@ -153,7 +157,7 @@ void mouse(int button, int state, int x, int y)
                 quantityClicks++;
                 printf("Ponto registrado %d %d\n", x, y);
 
-            } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE") && quantityClicks < 2){
+            } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE" || drawStatus == "SQUARE") && quantityClicks < 2){
                 pointsToDrawnLine[quantityClicks].x = x;
                 pointsToDrawnLine[quantityClicks].y = height - y;
                 quantityClicks++;
@@ -182,6 +186,14 @@ void mouse(int button, int state, int x, int y)
    }
 }
 
+void clearArray(ponto arrayToClean[], int size){
+    for(int i = 0; i < size; i++){
+        arrayToClean[i].x = 0;
+        arrayToClean[i].y = 0;
+    }
+}
+
+
 // Funcao usada na funcao callback para desenhar na tela
 void display(void){
     glClear(GL_COLOR_BUFFER_BIT); //Limpa o buffer de cores e reinicia a matriz
@@ -190,20 +202,29 @@ void display(void){
     glColor3f (0.0, 0.0, 0.0); // Seleciona a cor default como preto
 
     if(quantityClicks > 0){
-        if(drawStatus == "TRIANGLE"){
+        if(drawStatus == "TRIANGLE" && quantityClicks >= 3){
+            printf("teste");
             firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
             firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
             firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
-        } else if(drawStatus == "LINE_BRESENHAM"){
+
+        } else if(drawStatus == "LINE_BRESENHAM" && quantityClicks >= 2){
             bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
-        } else if(drawStatus == "LINE_REDUCTION_OCTAVE"){
+
+        } else if(drawStatus == "LINE_REDUCTION_OCTAVE" && quantityClicks >= 2){
             firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+
+        } else if(drawStatus == "SQUARE" && quantityClicks >= 2){
+            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y);
+            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+            firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
+            firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
+
+        } else {
+            printf("Quantidade de pontos marcados insuficiente\n");
+            return;
         }
-
-        // bresenham(x_1, y_1, x_2, y_2);
-        // bresenham(x_2, y_2, x_3, y_3);
-        // bresenham(x_3, y_3, x_1, y_1);
-
+    
         // retaImediata(x_1, y_1, x_2, y_2);
         // retaImediata(x_2, y_2, x_3, y_3);
         // retaImediata(x_3, y_3, x_1, y_1);
@@ -213,7 +234,6 @@ void display(void){
     }
 
     glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
-
 }
 
 //Funcao que desenha os pontos contidos em uma lista de pontos
@@ -242,7 +262,6 @@ void bresenham(int x1,int y1,int x2,int y2){
     bool firstExtremity = true;
     while(xi < x2){
         if(!firstExtremity){
-            if(!firstExtremity){
             if(distance <= 0){
             distance += incrementE;
             }else {
@@ -321,14 +340,11 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
 
     while(xi < x2){
         if(!firstExtremity){
-            if(!firstExtremity){
             if(distance <= 0){
-                    distance += incrementE;
-                }else {
-                    distance += incrementNE;
-                    yi++;
-            }
-            xi++;
+                distance += incrementE;
+            }else {
+                distance += incrementNE;
+                yi++;
             }
             xi++;
         }
@@ -336,9 +352,6 @@ void firstOctaveReduction(int x1, int y1, int x2, int y2){
         if(declive){
             tempXi = yi;
             tempYi = xi;
-        } else {
-            tempXi = xi;
-            tempYi = yi;
         } else {
             tempXi = xi;
             tempYi = yi;
