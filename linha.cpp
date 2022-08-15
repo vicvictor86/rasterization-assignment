@@ -17,6 +17,7 @@
 
 #include<iostream> 
 #include <bits/stdc++.h>
+#include <queue>
 using namespace std; 
 
 int quantityClicks = 0;
@@ -35,6 +36,11 @@ struct ponto{
 
 ponto pointsToDrawnTriangle[3] = {};
 ponto pointsToDrawnLine[2] = {};
+ponto pointsToDrawnPolygon[2] = {};
+
+ponto firstPointPolygon = {};
+
+queue<ponto> pointsToDrawnPolygonQueue;
 
 // Lista encadeada de pontos
 // indica o primeiro elemento da lista
@@ -64,6 +70,12 @@ ponto * popPonto(){
 		pontos = pnt;
 	}
 	return pnt;
+}
+
+void removeAllPoints(){
+    while(pontos != NULL){
+        popPonto();
+    }
 }
 
 // Declaracoes forward das funcoes utilizadas
@@ -120,27 +132,53 @@ void reshape(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 }
 
+template <typename T>
+void clearQueue(queue<T> * queueToClear){
+    while(!queueToClear->empty()){
+        queueToClear->pop();
+    }
+}
+
+void resetDrawnInformations() {
+    quantityClicks = 0;
+    clearQueue(&pointsToDrawnPolygonQueue);
+}
+
 // Funcao usada na funcao callback para utilizacao das teclas normais do teclado
 void keyboard(unsigned char key, int x, int y){
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
         break;
-        case 84:
+        case 116: // codigo ASCII da tecla 't'
             drawStatus = "TRIANGLE";
+            resetDrawnInformations();
+
             printf("Desenhar triangulo\n");
         break;
-        case 108:
+        case 108: // codigo ASCII da tecla 'l'
             drawStatus = "LINE_BRESENHAM";
+            resetDrawnInformations();
+
             printf("Desenhar linha usando Bresenham\n");
         break;
-        case 111:
+        case 111: // codigo ASCII da tecla 'o'
             drawStatus = "LINE_REDUCTION_OCTAVE";
+            resetDrawnInformations();
+
             printf("Desenhar linha usando reducao ao primeiro octante \n");
         break;
-        case 115:
+        case 115: // codigo ASCII da tecla 's'
             drawStatus = "SQUARE";
+            resetDrawnInformations();
+
             printf("Desenhar quadrado\n");
+        break;
+        case 112: // codigo ASCII da tecla 'p'
+            drawStatus = "POLYGON";
+            resetDrawnInformations();
+
+            printf("Desenhar poligono\n");
         break;
     }
 }
@@ -151,11 +189,14 @@ void mouse(int button, int state, int x, int y)
    switch (button) {
       case GLUT_LEFT_BUTTON:
         if (state == GLUT_DOWN) {
+            bool readyToDraw = false;
             if(drawStatus == "TRIANGLE" && quantityClicks < 3){
                 pointsToDrawnTriangle[quantityClicks].x = x;
                 pointsToDrawnTriangle[quantityClicks].y = height - y;
                 quantityClicks++;
                 printf("Ponto registrado %d %d\n", x, y);
+
+                readyToDraw = quantityClicks >= 3 ? true : false;
 
             } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE" || drawStatus == "SQUARE") && quantityClicks < 2){
                 pointsToDrawnLine[quantityClicks].x = x;
@@ -163,8 +204,28 @@ void mouse(int button, int state, int x, int y)
                 quantityClicks++;
                 printf("Ponto registrado %d %d\n", x, y);
 
-            } else {
-                printf("Numero maximo de pontos registrados\n");
+                readyToDraw = quantityClicks >= 2 ? true : false;
+
+            } else if(drawStatus == "POLYGON"){
+                if(pointsToDrawnPolygonQueue.empty()){
+                    firstPointPolygon.x = x;
+                    firstPointPolygon.y = height - y;
+
+                    pointsToDrawnPolygonQueue.push({x, height - y, NULL});
+                    quantityClicks++;
+                    printf("Ponto registrado %d %d\n", x, y);
+                } else {
+                    pointsToDrawnPolygonQueue.push({x, height - y, NULL});
+                    quantityClicks++;
+
+                    printf("Ponto registrado %d %d\n", x, y);
+
+                    glutPostRedisplay();
+                }
+            } 
+
+            if(readyToDraw){
+                glutPostRedisplay();
             }
         }
         break;
@@ -177,7 +238,16 @@ void mouse(int button, int state, int x, int y)
 
         case GLUT_RIGHT_BUTTON:
             if (state == GLUT_DOWN) {
+                removeAllPoints();
+                quantityClicks = 0;
+
+                clearQueue(&pointsToDrawnPolygonQueue);
+                
+                glClear(GL_COLOR_BUFFER_BIT); // Clean the screen and the depth buffer
+                glLoadIdentity(); // Reset The Projection Matrix
                 glutPostRedisplay();
+                
+                printf("Tela limpada\n");
             }
         break;
 
@@ -185,14 +255,6 @@ void mouse(int button, int state, int x, int y)
             break;
    }
 }
-
-void clearArray(ponto arrayToClean[], int size){
-    for(int i = 0; i < size; i++){
-        arrayToClean[i].x = 0;
-        arrayToClean[i].y = 0;
-    }
-}
-
 
 // Funcao usada na funcao callback para desenhar na tela
 void display(void){
@@ -203,11 +265,10 @@ void display(void){
 
     if(quantityClicks > 0){
         if(drawStatus == "TRIANGLE" && quantityClicks >= 3){
-            printf("teste");
             firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
             firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
             firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
-
+            
         } else if(drawStatus == "LINE_BRESENHAM" && quantityClicks >= 2){
             bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
 
@@ -220,6 +281,15 @@ void display(void){
             firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
             firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
 
+        } else if(drawStatus == "POLYGON") {
+            if(abs(pointsToDrawnPolygonQueue.back().x - firstPointPolygon.x) < 15 && abs(pointsToDrawnPolygonQueue.back().y - firstPointPolygon.y) < 15){
+                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y); 
+                pointsToDrawnPolygonQueue.pop();
+
+            } else {
+                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);
+            }
+            pointsToDrawnPolygonQueue.pop();
         } else {
             printf("Quantidade de pontos marcados insuficiente\n");
             return;
@@ -247,6 +317,14 @@ void drawPontos(){
         }
     glEnd();  // indica o fim do desenho
 }
+
+void clearArray(ponto arrayToClean[], int size){
+    for(int i = 0; i < size; i++){
+        arrayToClean[i].x = 0;
+        arrayToClean[i].y = 0;
+    }
+}
+
 
 void bresenham(int x1,int y1,int x2,int y2){
     int delta_x = x2 - x1;
