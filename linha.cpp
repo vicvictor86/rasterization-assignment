@@ -37,6 +37,9 @@ ponto pointsToDrawnPolygon[2] = {};
 
 ponto firstPointPolygon = {};
 
+ponto centerCircle = {};
+int circleRadius = 0;
+
 queue<ponto> pointsToDrawnPolygonQueue;
 
 // Lista encadeada de pontos
@@ -87,6 +90,7 @@ void retaImediata(double x1,double y1,double x2,double y2);
 void drawPontos();
 void bresenham(int x1,int y1,int x2,int y2);
 void firstOctaveReduction(int x1,int y1,int x2,int y2);
+void circumferenceRasterization(int radius, int x, int y);
 
 // Funcao Principal do C
 int main(int argc, char** argv){
@@ -178,6 +182,12 @@ void keyboard(unsigned char key, int x, int y){
 
             printf("Desenhar poligono\n");
         break;
+        case 99: // codigo ASCII da tecla 'c'
+            drawStatus = "CIRCLE";
+            resetDrawnInformations();
+
+            printf("Desenhar circulo\n");
+        break;
     }
 }
 
@@ -228,7 +238,24 @@ void mouse(int button, int state, int x, int y)
 
                         glutPostRedisplay();
                     }
-                } 
+                } else if(drawStatus == "CIRCLE"){
+                    if(quantityClicks == 0){
+                        centerCircle.x = x;
+                        centerCircle.y = height - y;
+                        quantityClicks++;
+
+                        printf("Centro do circulo %d %d registrado\n", x, centerCircle.y);
+                    } else {
+                        int yWithOffset = height - y;
+                        int powX = pow(x - centerCircle.x, 2);
+                        int powY = pow(yWithOffset - centerCircle.y, 2);
+
+                        circleRadius = sqrt(powX + powY);
+
+                        printf("Circulo com raio %d registrado\n", circleRadius);
+                        readyToDraw = true;
+                    }
+                }
 
                 if(readyToDraw){
                     glutPostRedisplay();
@@ -310,6 +337,9 @@ void display(void){
 
             pointsToDrawnPolygonQueue.pop();
 
+        } else if (drawStatus == "CIRCLE") {
+            circumferenceRasterization(circleRadius, centerCircle.x, centerCircle.y);
+            // circumferenceRasterization(8, 0, 0);
         } else {
             printf("Quantidade de pontos marcados insuficiente\n");
             return;
@@ -371,6 +401,46 @@ void bresenham(int x1,int y1,int x2,int y2){
         pontos = pushPonto((int)xi, (int)yi);
         // printf("xiyi(%d,%d)\n", xi, yi);
 
+        firstExtremity = false;
+    }
+}
+
+void circumferenceRasterization(int radius, int x, int y){
+    int distance = 1 - radius;
+    int deltaE = 3;
+    int deltaSE = 5 - 2 * radius;
+    int xi = 0;
+    int yi = radius;
+
+    pontos = pushPonto(x, radius + y);
+    pontos = pushPonto(x, -radius + y);
+    pontos = pushPonto(radius + x, y);
+    pontos = pushPonto(-radius + x, y);
+
+    bool firstExtremity = true;
+    while(yi > xi){
+        if(!firstExtremity){
+            if(distance < 0){
+                distance += deltaE;
+                deltaE += 2;
+                deltaSE += 2;
+            } else {
+                distance += deltaSE;
+                deltaE += 2;
+                deltaSE += 4;
+                yi--;
+            }
+        }
+        xi++;
+
+        pontos = pushPonto(xi + x, yi + y);
+        pontos = pushPonto(yi + x, xi + y);
+        pontos = pushPonto(yi + x, -xi + y);
+        pontos = pushPonto(xi + x, -yi + y);
+        pontos = pushPonto(-xi + x, -yi + y);
+        pontos = pushPonto(-yi + x, -xi + y);
+        pontos = pushPonto(-yi + x, xi + y);
+        pontos = pushPonto(-xi + x, yi + y);
         firstExtremity = false;
     }
 }
