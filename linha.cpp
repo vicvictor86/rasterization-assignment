@@ -11,7 +11,6 @@
 #include <GL/glut.h>
 
 // Biblioteca com funcoes matematicas
-#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -19,6 +18,8 @@
 #include <bits/stdc++.h>
 #include <queue>
 using namespace std; 
+
+#include "transformations.h"
 
 int quantityClicks = 0;
 
@@ -28,11 +29,7 @@ string drawStatus = "TRIANGLE";
 
 // Estrututa de dados para o armazenamento dinamico dos pontos
 // selecionados pelos algoritmos de rasterizacao
-struct ponto{
-    int x;
-    int y;
-    ponto * prox;
-};
+
 
 ponto pointsToDrawnTriangle[3] = {};
 ponto pointsToDrawnLine[2] = {};
@@ -45,7 +42,6 @@ queue<ponto> pointsToDrawnPolygonQueue;
 // Lista encadeada de pontos
 // indica o primeiro elemento da lista
 ponto * pontos = NULL;
-
 
 // Funcao para armazenar um ponto na lista
 // Armazena como uma Pilha (empilha)
@@ -125,7 +121,9 @@ void reshape(int w, int h)
 	
 	width = w;
 	height = h;
-    glOrtho (0, w, 0, h, -1 ,1);  
+    glOrtho (-(w/2), (w/2), -(w/2), (w/2), -1 ,1); // Centro da tela no meio
+
+    // glOrtho (0, w, 0, h, -1 ,1);  
 
    // muda para o modo GL_MODELVIEW (n�o pretendemos alterar a projec��o
    // quando estivermos a desenhar na tela)
@@ -183,77 +181,99 @@ void keyboard(unsigned char key, int x, int y){
     }
 }
 
+void offSetCenterWindow(int * x, int * y){
+    *x -= width/2;
+    *y += height/2;
+}
+
+void registerPoint(ponto * pointsToDrawn, int x, int y){
+    pointsToDrawn[quantityClicks].x = x;
+    pointsToDrawn[quantityClicks].y = height - y;
+    quantityClicks++;
+    printf("Ponto registrado %d %d\n", x, y);
+}
+
+void registerPolygonPoint(int x, int y){
+    pointsToDrawnPolygonQueue.push({x, height - y, NULL});
+    quantityClicks++;
+    printf("Ponto registrado %d %d\n", x, y);
+}
+
 //Funcao usada na funcao callback para a utilizacao do mouse
 void mouse(int button, int state, int x, int y)
 {
-   switch (button) {
-      case GLUT_LEFT_BUTTON:
-        if (state == GLUT_DOWN) {
-            bool readyToDraw = false;
-            if(drawStatus == "TRIANGLE" && quantityClicks < 3){
-                pointsToDrawnTriangle[quantityClicks].x = x;
-                pointsToDrawnTriangle[quantityClicks].y = height - y;
-                quantityClicks++;
-                printf("Ponto registrado %d %d\n", x, y);
+    offSetCenterWindow(&x, &y);
 
-                readyToDraw = quantityClicks >= 3 ? true : false;
-
-            } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE" || drawStatus == "SQUARE") && quantityClicks < 2){
-                pointsToDrawnLine[quantityClicks].x = x;
-                pointsToDrawnLine[quantityClicks].y = height - y;
-                quantityClicks++;
-                printf("Ponto registrado %d %d\n", x, y);
-
-                readyToDraw = quantityClicks >= 2 ? true : false;
-
-            } else if(drawStatus == "POLYGON"){
-                if(pointsToDrawnPolygonQueue.empty()){
-                    firstPointPolygon.x = x;
-                    firstPointPolygon.y = height - y;
-
-                    pointsToDrawnPolygonQueue.push({x, height - y, NULL});
-                    quantityClicks++;
-                    printf("Ponto registrado %d %d\n", x, y);
-                } else {
-                    pointsToDrawnPolygonQueue.push({x, height - y, NULL});
-                    quantityClicks++;
-
-                    printf("Ponto registrado %d %d\n", x, y);
-
-                    glutPostRedisplay();
-                }
-            } 
-
-            if(readyToDraw){
-                glutPostRedisplay();
-            }
-        }
-        break;
-
-        // case GLUT_MIDDLE_BUTTON:
-        //     if (state == GLUT_DOWN) {
-        //         glutPostRedisplay();
-        //     }
-        // break;
-
-        case GLUT_RIGHT_BUTTON:
+    switch (button) {
+        case GLUT_LEFT_BUTTON:
             if (state == GLUT_DOWN) {
-                removeAllPoints();
-                quantityClicks = 0;
+                bool readyToDraw = false;
+                if(drawStatus == "TRIANGLE" && quantityClicks < 3){
+                    registerPoint(pointsToDrawnTriangle, x, y);
+                    readyToDraw = quantityClicks >= 3 ? true : false;
 
-                clearQueue(&pointsToDrawnPolygonQueue);
-                
-                glClear(GL_COLOR_BUFFER_BIT); // Clean the screen and the depth buffer
-                glLoadIdentity(); // Reset The Projection Matrix
-                glutPostRedisplay();
-                
-                printf("Tela limpada\n");
+                } else if((drawStatus == "LINE_BRESENHAM" || drawStatus == "LINE_REDUCTION_OCTAVE" || drawStatus == "SQUARE") && quantityClicks < 2){
+                    registerPoint(pointsToDrawnLine, x, y);
+
+                    readyToDraw = quantityClicks >= 2 ? true : false;
+
+                } else if(drawStatus == "POLYGON"){
+                    if(pointsToDrawnPolygonQueue.empty()){
+                        firstPointPolygon.x = x;
+                        firstPointPolygon.y = height - y;
+                        
+                        registerPolygonPoint(x, y);
+                    } else {
+                        registerPolygonPoint(x, y);
+
+                        glutPostRedisplay();
+                    }
+                } 
+
+                if(readyToDraw){
+                    glutPostRedisplay();
+                    printf("Objeto rasterizado\n");
+                }
             }
-        break;
-
-        default:
             break;
-   }
+
+            // case GLUT_MIDDLE_BUTTON:
+            //     if (state == GLUT_DOWN) {
+            //         glutPostRedisplay();
+            //     }
+            // break;
+
+            case GLUT_RIGHT_BUTTON:
+                if (state == GLUT_DOWN) {
+                    removeAllPoints();
+                    quantityClicks = 0;
+
+                    clearQueue(&pointsToDrawnPolygonQueue);
+                    
+                    glClear(GL_COLOR_BUFFER_BIT); // Clean the screen and the depth buffer
+                    glLoadIdentity(); // Reset The Projection Matrix
+                    glutPostRedisplay();
+                    
+                    printf("Tela limpada\n");
+                }
+            break;
+
+            default:
+                break;
+    }
+}
+
+void drawnTriangle(){
+    firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
+    firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
+    firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+}
+
+void drawnSquare(){
+    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y);
+    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+    firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
+    firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
 }
 
 // Funcao usada na funcao callback para desenhar na tela
@@ -265,9 +285,7 @@ void display(void){
 
     if(quantityClicks > 0){
         if(drawStatus == "TRIANGLE" && quantityClicks >= 3){
-            firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
-            firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
-            firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+            drawnTriangle();
             
         } else if(drawStatus == "LINE_BRESENHAM" && quantityClicks >= 2){
             bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
@@ -276,20 +294,22 @@ void display(void){
             firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
 
         } else if(drawStatus == "SQUARE" && quantityClicks >= 2){
-            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y);
-            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
-            firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
-            firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
+            drawnSquare();
 
         } else if(drawStatus == "POLYGON") {
-            if(abs(pointsToDrawnPolygonQueue.back().x - firstPointPolygon.x) < 15 && abs(pointsToDrawnPolygonQueue.back().y - firstPointPolygon.y) < 15){
+            bool clickToClosePolygonX = abs(pointsToDrawnPolygonQueue.back().x - firstPointPolygon.x) < 15;
+            bool clickToClosePolygonY = abs(pointsToDrawnPolygonQueue.back().y - firstPointPolygon.y) < 15;
+
+            if(clickToClosePolygonX && clickToClosePolygonY){
                 firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y); 
                 pointsToDrawnPolygonQueue.pop();
 
             } else {
                 firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);
             }
+
             pointsToDrawnPolygonQueue.pop();
+
         } else {
             printf("Quantidade de pontos marcados insuficiente\n");
             return;
@@ -324,7 +344,6 @@ void clearArray(ponto arrayToClean[], int size){
         arrayToClean[i].y = 0;
     }
 }
-
 
 void bresenham(int x1,int y1,int x2,int y2){
     int delta_x = x2 - x1;
