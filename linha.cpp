@@ -37,6 +37,9 @@ ponto pointsToDrawnPolygon[2] = {};
 
 ponto firstPointPolygon = {};
 
+ponto squareVertices[4] = {};
+ponto triangleVertices[3] = {};
+
 ponto centerCircle = {};
 int circleRadius = 0;
 
@@ -83,6 +86,7 @@ void reshape(int w, int h);
 void display(void);
 void keyboard(unsigned char key, int x, int y);
 void mouse(int button, int state, int x, int y);
+void SpecialFuncInput(int key, int x, int y);
 
 // Funcao que implementa o Algoritmo Imediato para rasterizacao de retas
 void retaImediata(double x1,double y1,double x2,double y2);
@@ -103,6 +107,7 @@ int main(int argc, char** argv){
     init(); // Chama funcao init();
     glutReshapeFunc(reshape); //funcao callback para redesenhar a tela
     glutKeyboardFunc(keyboard); //funcao callback do teclado
+    glutSpecialFunc(SpecialFuncInput);
     glutMouseFunc(mouse); //funcao callback do mouse
     glutDisplayFunc(display); //funcao callback de desenho
     glutMainLoop(); // executa o loop do OpenGL
@@ -146,6 +151,31 @@ void resetDrawnInformations() {
     clearQueue(&pointsToDrawnPolygonQueue);
 }
 
+void SpecialFuncInput(int key, int x, int y){
+    switch(key) {
+        case GLUT_KEY_UP:
+            translation(pontos, 0, 20);
+            glutPostRedisplay();
+            printf("Translacao para cima\n");
+        break; 
+        case GLUT_KEY_DOWN:
+            translation(pontos, 0, -20);
+            glutPostRedisplay();
+            printf("Translacao para baixo\n");
+        break;  
+        case GLUT_KEY_LEFT:
+            translation(pontos, -20, 0);
+            glutPostRedisplay();
+            printf("Translacao para esquerda\n");
+        break;  
+        case GLUT_KEY_RIGHT:
+            translation(pontos, 20, 0);
+            glutPostRedisplay();
+            printf("Translacao para direita\n");
+        break;   
+    }
+}
+
 // Funcao usada na funcao callback para utilizacao das teclas normais do teclado
 void keyboard(unsigned char key, int x, int y){
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
@@ -187,6 +217,12 @@ void keyboard(unsigned char key, int x, int y){
             resetDrawnInformations();
 
             printf("Desenhar circulo\n");
+        break;
+        case 100: // codigo ASCII da tecla 'd'
+            ponto pontosToRotate[5] = {{5,4},{4,3},{4,1},{6,1},{6,3}};
+            rotation(pontos, 5, 45);
+            glutPostRedisplay();
+            printf("Gira\n");
         break;
     }
 }
@@ -290,10 +326,31 @@ void mouse(int button, int state, int x, int y)
     }
 }
 
+void defineVertexTriangle(){
+    triangleVertices[0].x = pointsToDrawnTriangle[0].x;
+    triangleVertices[0].y = pointsToDrawnTriangle[0].y;
+    triangleVertices[1].x = pointsToDrawnTriangle[1].x;
+    triangleVertices[1].y = pointsToDrawnTriangle[1].y;
+    triangleVertices[2].x = pointsToDrawnTriangle[2].x;
+    triangleVertices[2].y = pointsToDrawnTriangle[2].y;
+}
+
 void drawnTriangle(){
     firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
     firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
     firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+    defineVertexTriangle();
+}
+
+void defineVertexSquare(){
+    squareVertices[0].x = pointsToDrawnLine[0].x;
+    squareVertices[0].y = pointsToDrawnLine[0].y;
+    squareVertices[1].x = pointsToDrawnLine[0].x;
+    squareVertices[1].y = pointsToDrawnLine[1].y;
+    squareVertices[2].x = pointsToDrawnLine[1].x;
+    squareVertices[2].y = pointsToDrawnLine[1].y;
+    squareVertices[3].x = pointsToDrawnLine[1].x;
+    squareVertices[3].y = pointsToDrawnLine[0].y;
 }
 
 void drawnSquare(){
@@ -301,6 +358,7 @@ void drawnSquare(){
     firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
     firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
     firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
+    defineVertexSquare();
 }
 
 // Funcao usada na funcao callback para desenhar na tela
@@ -349,9 +407,9 @@ void display(void){
         // retaImediata(x_2, y_2, x_3, y_3);
         // retaImediata(x_3, y_3, x_1, y_1);
         
-        drawPontos();
         quantityClicks = 0;
     }
+    drawPontos();
 
     glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
 }
@@ -404,6 +462,11 @@ void bresenham(int x1,int y1,int x2,int y2){
         firstExtremity = false;
     }
 }
+
+// void floodFill(int x, int y, double color, double newColor){
+//     float pixels[4];
+//     glReadPixels(x, y, width, height, GL_RGB, GL_FLOAT, pixels);
+// }
 
 void circumferenceRasterization(int radius, int x, int y){
     int distance = 1 - radius;
