@@ -1,10 +1,5 @@
 #include <cmath>
-
-struct ponto{
-    int x;
-    int y;
-    ponto * prox;
-};
+#include "rasterizationAlgorithms.h"
 
 void translation(ponto * point, int Tx, int Ty){
     while(point != NULL){
@@ -12,6 +7,14 @@ void translation(ponto * point, int Tx, int Ty){
         point->y = point->y + Ty;
         point = point->prox;
     }
+}
+
+void translationLine(line * point, int Tx, int Ty){
+    point->x1 = point->x1 + Tx;
+    point->y1 = point->y1 + Ty;
+    point->x2 = point->x2 + Tx;
+    point->y2 = point->y2 + Ty;
+    // point = point->prox;
 }
 
 ponto getCentroid(ponto * arrayToScale, int size){
@@ -47,80 +50,101 @@ ponto getCentroid(ponto * arrayToScale, int size){
     return centroid;
 }
 
-// void scale(ponto * arrayToScale, int size, int Sx, int Sy){
-//     for(int i = 0; i < size; i++){
-//         arrayToScale[i].x *= Sx;
-//         arrayToScale[i].y *= Sy;
-//     }
-//     translation(arrayToScale, size, (Sx/2), (Sy/2));
-// }
+void scale(line * arrayToScale, int Sx, int Sy){
+    // ponto centroid = getCentroid(arrayToScale, size);
+    while(arrayToScale != NULL){
+        // translationLine(arrayToScale, -(arrayToScale->x1 + arrayToScale->x2)/2, -(arrayToScale->y1 + arrayToScale->y2)/2);
+        arrayToScale->x1 *= Sx;
+        arrayToScale->y1 *= Sy;
+        arrayToScale->x2 *= Sx;
+        arrayToScale->y2 *= Sy;
+        // translationLine(arrayToScale, (arrayToScale->x1 + arrayToScale->x2)/2, (arrayToScale->y1 + arrayToScale->y2)/2);
+        firstOctaveReduction(arrayToScale->x1, arrayToScale->y1, arrayToScale->x2, arrayToScale->y2, true);
+        arrayToScale = arrayToScale->prox;
+    }
+}
 
-void rotation(ponto * point, int size, int angle){
-    ponto centroid = getCentroid(point, size);
-    translation(point, -centroid.x, -centroid.y);
-    while(point != NULL){   
-        int x = point->x;
-        int y = point->y;
+void rotation(line * point, int angle){
+    // ponto centroid = getCentroid(point, size);
+    // translation(point, -centroid.x, -centroid.y);
+    while(point != NULL){  
+        int x1 = point->x1;
+        int y1 = point->y1;
+        int x2 = point->x2;
+        int y2 = point->y2;
 
-        double degreesToRadian = angle*3.14159/180;
-        double rotationX = x * cos(degreesToRadian) - y * sin(degreesToRadian);
-        double rotationY = x * sin(degreesToRadian) + y * cos(degreesToRadian);
+        double degreesToRadian = angle * 3.14 / 180;
+        // translationLine(arrayToScale, -(arrayToScale->x1 + arrayToScale->x2)/2, -(arrayToScale->y1 + arrayToScale->y2)/2);
 
-        point->x = round(rotationX);
-        point->y = round(rotationY);
+        double rotationX1 = x1 * cos(degreesToRadian) - y1 * sin(degreesToRadian);
+        double rotationY1 = x1 * sin(degreesToRadian) + y1 * cos(degreesToRadian);
+        double rotationX2 = x2 * cos(degreesToRadian) - y2 * sin(degreesToRadian);
+        double rotationY2 = x2 * sin(degreesToRadian) + y2 * cos(degreesToRadian);
+
+        point->x1 = round(rotationX1);
+        point->y1 = round(rotationY1);
+        point->x2 = round(rotationX2);
+        point->y2 = round(rotationY2);
+        // translationLine(arrayToScale, (arrayToScale->x1 + arrayToScale->x2)/2, (arrayToScale->y1 + arrayToScale->y2)/2);
+        firstOctaveReduction(point->x1, point->y1, point->x2, point->y2, true); 
+
         point = point->prox;
-
-        printf("%.2f %.2f\n", rotationX, rotationY);
-    }
-    // for(int i = 0; i < size; i++){   
-    //     int x = point[i].x;
-    //     int y = point[i].y;
-    //     double degreesToRadian = angle*3.14159/180;
-
-    //     double rotationX = x * cos(degreesToRadian) - y * sin(degreesToRadian);
-    //     double rotationY = x * sin(degreesToRadian) + y * cos(degreesToRadian);
-
-    //     point[i].x = (int)round(rotationX);
-    //     point[i].y = (int)round(rotationY);
-    //     printf("%.2f %.2f\n", rotationX, rotationY);
-    // }
-    translation(point, centroid.x, centroid.y);
-}
-
-void shearX(ponto * arrayToShear, int size, int S){
-    for(int i = 0; i < size; i++){
-        arrayToShear[i].x += S * arrayToShear[i].y;
     }
 }
 
-void shearY(ponto * arrayToShear, int size, int S){
-    for(int i = 0; i < size; i++){
-        arrayToShear[i].y += S * arrayToShear[i].x;
+void shearX(line * arrayToShear, int S){
+    while(arrayToShear != NULL){
+        arrayToShear->x1 += S * arrayToShear->y1;
+        arrayToShear->x2 += S * arrayToShear->y2;
+        firstOctaveReduction(arrayToShear->x1, arrayToShear->y1, arrayToShear->x2, arrayToShear->y2, true);
+        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
+        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
+        arrayToShear = arrayToShear->prox;
     }
 }
 
-void shear(ponto * arrayToShear, int size, int Sx, int Sy){
-    for(int i = 0; i < size; i++){
-        arrayToShear[i].x += Sx * arrayToShear[i].y;
-        arrayToShear[i].y += Sy * arrayToShear[i].x;
+void shearY(line * arrayToShear, int S){
+    while(arrayToShear != NULL){
+        arrayToShear->y1 += S * arrayToShear->x1;
+        arrayToShear->y2 += S * arrayToShear->x2;
+        firstOctaveReduction( arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
+        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
+        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
+        arrayToShear = arrayToShear->prox;
     }
 }
 
-void reflectionOverX(ponto * arrayToReflect, int size){
-    for(int i = 0; i < size; i++){
-        arrayToReflect[i].y *= -1;
+void shear(line * arrayToShear, int Sx, int Sy){
+    while(arrayToShear != NULL){
+        arrayToShear->x1 += Sx * arrayToShear->y1;
+        arrayToShear->x2 += Sx * arrayToShear->y2;
+        arrayToShear->y1 += Sy * arrayToShear->x1;
+        arrayToShear->y2 += Sy * arrayToShear->x2;
+        firstOctaveReduction(arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
+        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
+        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
+        arrayToShear = arrayToShear->prox;
     }
 }
 
-void reflectionOverY(ponto * arrayToReflect, int size){
-    for(int i = 0; i < size; i++){
-        arrayToReflect[i].x *= -1;
+void reflectionOverX(ponto * arrayToReflect){
+    while(arrayToReflect != NULL){
+        arrayToReflect->y *= -1;
+        arrayToReflect = arrayToReflect->prox;
     }
 }
 
-void reflectionOverOrigin(ponto * arrayToReflect, int size){
-    for(int i = 0; i < size; i++){
-        arrayToReflect[i].x *= -1;
-        arrayToReflect[i].y *= -1;
+void reflectionOverY(ponto * arrayToReflect){
+    while(arrayToReflect != NULL){
+        arrayToReflect->x *= -1;
+        arrayToReflect = arrayToReflect->prox;
+    }
+}
+
+void reflectionOverOrigin(ponto * arrayToReflect){
+    while(arrayToReflect != NULL){
+        arrayToReflect->x *= -1;
+        arrayToReflect->y *= -1;
+        arrayToReflect = arrayToReflect->prox;
     }
 }
