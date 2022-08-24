@@ -1,4 +1,5 @@
 #include <cmath>
+#include <vector>
 #include "rasterizationAlgorithms.h"
 
 void translation(ponto * point, int Tx, int Ty){
@@ -9,36 +10,50 @@ void translation(ponto * point, int Tx, int Ty){
     }
 }
 
-void translationLine(line * point, int Tx, int Ty){
-    point->x1 = point->x1 + Tx;
-    point->y1 = point->y1 + Ty;
-    point->x2 = point->x2 + Tx;
-    point->y2 = point->y2 + Ty;
-    // point = point->prox;
+void translationLine(line * point, int Tx, int Ty, int firstPointPolygonToModify, int lastPointPolygonToModify){
+    int pointToModify = 0;
+    while(point != NULL){
+        if(pointToModify >= firstPointPolygonToModify && pointToModify < lastPointPolygonToModify){
+            point->x1 = point->x1 + Tx;
+            point->y1 = point->y1 + Ty;
+            point->x2 = point->x2 + Tx;
+            point->y2 = point->y2 + Ty;
+        }
+        point = point->prox;
+        pointToModify++;
+    }
 }
 
-ponto getCentroid(ponto * arrayToScale, int size){
+ponto getCentroid(vector<line> lineVectors){
+    if(lineVectors.size() == 1){
+        ponto centroid;
+        centroid.x = int((lineVectors.at(0).x1 + lineVectors.at(0).x2)/2);
+        centroid.y = int((lineVectors.at(0).y1 + lineVectors.at(0).y2)/2);
+        return centroid;
+    }
+
     double area = 0;
+    int size = lineVectors.size();
     for(int i = 0; i < size; i++){
-        ponto nextVertex;
-        i + 1 >= size ? nextVertex = arrayToScale[0] : nextVertex = arrayToScale[i + 1];
-        area += arrayToScale[i].x * nextVertex.y - nextVertex.x * arrayToScale[i].y;
+        line nextVertex;
+        i + 1 >= size ? nextVertex = lineVectors.at(0) : nextVertex = lineVectors.at(i + 1);
+        area += lineVectors.at(i).x1 * nextVertex.y1 - nextVertex.x1 * lineVectors.at(i).y1;
     }
     area = area / 2;
 
     double x = 0;
     double y = 0;
     for(int i = 0; i < size; i++){
-        ponto nextVertex;
-        i + 1 >= size ? nextVertex = arrayToScale[0] : nextVertex = arrayToScale[i + 1];
-        x += (arrayToScale[i].x + nextVertex.x) * (arrayToScale[i].x * nextVertex.y - nextVertex.x * arrayToScale[i].y);
+        line nextVertex;
+        i + 1 >= size ? nextVertex = lineVectors.at(0) : nextVertex = lineVectors.at(i + 1);
+        x += (lineVectors.at(i).x1 + nextVertex.x1) * (lineVectors.at(i).x1 * nextVertex.y1 - nextVertex.x1 * lineVectors.at(i).y1);
     }
     x = round(x / (6 * area));
     // printf("Centroide x %.2f\n", x);
     for(int i = 0; i < size; i++){
-        ponto nextVertex;
-        i + 1 >= size ? nextVertex = arrayToScale[0] : nextVertex = arrayToScale[i + 1];
-        y += (arrayToScale[i].y + nextVertex.y) * (arrayToScale[i].x * nextVertex.y - nextVertex.x * arrayToScale[i].y);
+        line nextVertex;
+        i + 1 >= size ? nextVertex = lineVectors.at(0) : nextVertex = lineVectors.at(i + 1);
+        y += (lineVectors.at(i).y1 + nextVertex.y1) * (lineVectors.at(i).x1 * nextVertex.y1 - nextVertex.x1 * lineVectors.at(i).y1);
     }
     y = round(y / (6 * area));
     // printf("Centroide y %.2f\n", y);
@@ -50,45 +65,106 @@ ponto getCentroid(ponto * arrayToScale, int size){
     return centroid;
 }
 
-void scale(line * arrayToScale, int Sx, int Sy){
-    // ponto centroid = getCentroid(arrayToScale, size);
+//Faz a transformação de escala apenas no último poligono desenhado
+void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
+    vector<line> subPolygonArray;
+    int firstPointPolygonToModify = 0;
+    line * startLinkedList = arrayToScale;
+
+    int lastPointPolygonToModify = sizePolygon;
+
     while(arrayToScale != NULL){
-        // translationLine(arrayToScale, -(arrayToScale->x1 + arrayToScale->x2)/2, -(arrayToScale->y1 + arrayToScale->y2)/2);
-        arrayToScale->x1 *= Sx;
-        arrayToScale->y1 *= Sy;
-        arrayToScale->x2 *= Sx;
-        arrayToScale->y2 *= Sy;
-        // translationLine(arrayToScale, (arrayToScale->x1 + arrayToScale->x2)/2, (arrayToScale->y1 + arrayToScale->y2)/2);
-        firstOctaveReduction(arrayToScale->x1, arrayToScale->y1, arrayToScale->x2, arrayToScale->y2, true);
+        line actualLine = {arrayToScale->x1, arrayToScale->y1, arrayToScale->x2, arrayToScale->y2, arrayToScale->prox, arrayToScale->endPolygon};
+        subPolygonArray.push_back(actualLine);
+
+        line * tempLinkedList = startLinkedList;
+        if(subPolygonArray.back().endPolygon){
+            ponto centroid = getCentroid(subPolygonArray);
+
+            translationLine(startLinkedList, -centroid.x, -centroid.y, firstPointPolygonToModify, lastPointPolygonToModify);
+            int pointToModify = 0;
+            while(tempLinkedList != NULL){
+                if(pointToModify >= firstPointPolygonToModify && pointToModify < lastPointPolygonToModify){
+                    tempLinkedList->x1 *= Sx;
+                    tempLinkedList->y1 *= Sy;
+                    tempLinkedList->x2 *= Sx;
+                    tempLinkedList->y2 *= Sy;
+                    pointToModify++;
+                }
+                tempLinkedList = tempLinkedList->prox;
+            }
+            translationLine(startLinkedList, centroid.x, centroid.y, firstPointPolygonToModify, lastPointPolygonToModify);
+            
+            tempLinkedList = startLinkedList;
+            pointToModify = 0;
+
+            removeAllPoints();
+            while(tempLinkedList != NULL){
+                firstOctaveReduction(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
+                tempLinkedList = tempLinkedList->prox;
+            }
+            return;
+        }
+
         arrayToScale = arrayToScale->prox;
     }
 }
 
-void rotation(line * point, int angle){
-    // ponto centroid = getCentroid(point, size);
-    // translation(point, -centroid.x, -centroid.y);
-    while(point != NULL){  
-        int x1 = point->x1;
-        int y1 = point->y1;
-        int x2 = point->x2;
-        int y2 = point->y2;
+void rotation(line * arrayToRotate, int angle, int sizePolygon){
+    vector<line> subPolygonArray;
+    int firstPointPolygonToModify = 0;
+    line * startLinkedList = arrayToRotate;
 
-        double degreesToRadian = angle * 3.14 / 180;
-        // translationLine(arrayToScale, -(arrayToScale->x1 + arrayToScale->x2)/2, -(arrayToScale->y1 + arrayToScale->y2)/2);
+    int lastPointPolygonToModify = sizePolygon;
 
-        double rotationX1 = x1 * cos(degreesToRadian) - y1 * sin(degreesToRadian);
-        double rotationY1 = x1 * sin(degreesToRadian) + y1 * cos(degreesToRadian);
-        double rotationX2 = x2 * cos(degreesToRadian) - y2 * sin(degreesToRadian);
-        double rotationY2 = x2 * sin(degreesToRadian) + y2 * cos(degreesToRadian);
+    while(arrayToRotate != NULL){  
+        line actualLine = {arrayToRotate->x1, arrayToRotate->y1, arrayToRotate->x2, arrayToRotate->y2, arrayToRotate->prox, arrayToRotate->endPolygon};
+        subPolygonArray.push_back(actualLine);
 
-        point->x1 = round(rotationX1);
-        point->y1 = round(rotationY1);
-        point->x2 = round(rotationX2);
-        point->y2 = round(rotationY2);
-        // translationLine(arrayToScale, (arrayToScale->x1 + arrayToScale->x2)/2, (arrayToScale->y1 + arrayToScale->y2)/2);
-        firstOctaveReduction(point->x1, point->y1, point->x2, point->y2, true); 
+        line * tempLinkedList = startLinkedList;
 
-        point = point->prox;
+        if(subPolygonArray.back().endPolygon){
+            ponto centroid = getCentroid(subPolygonArray);
+            translationLine(startLinkedList, -centroid.x, -centroid.y, firstPointPolygonToModify, lastPointPolygonToModify);
+            int pointToModify = 0;
+
+            while(tempLinkedList != NULL){
+                if(pointToModify >= firstPointPolygonToModify && pointToModify < lastPointPolygonToModify){
+                    int x1 = tempLinkedList->x1;
+                    int y1 = tempLinkedList->y1;
+                    int x2 = tempLinkedList->x2;
+                    int y2 = tempLinkedList->y2;
+
+                    double degreesToRadian = angle * 3.14 / 180;
+
+                    double rotationX1 = x1 * cos(degreesToRadian) - y1 * sin(degreesToRadian);
+                    double rotationY1 = x1 * sin(degreesToRadian) + y1 * cos(degreesToRadian);
+                    double rotationX2 = x2 * cos(degreesToRadian) - y2 * sin(degreesToRadian);
+                    double rotationY2 = x2 * sin(degreesToRadian) + y2 * cos(degreesToRadian);
+
+                    tempLinkedList->x1 = round(rotationX1);
+                    tempLinkedList->y1 = round(rotationY1);
+                    tempLinkedList->x2 = round(rotationX2);
+                    tempLinkedList->y2 = round(rotationY2);
+
+                    pointToModify++;
+                }
+                tempLinkedList = tempLinkedList->prox;
+            }
+            translationLine(startLinkedList, centroid.x, centroid.y, firstPointPolygonToModify, lastPointPolygonToModify);
+
+            tempLinkedList = startLinkedList;
+            pointToModify = 0;
+
+            removeAllPoints();
+            while(tempLinkedList != NULL){
+                firstOctaveReduction(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
+                tempLinkedList = tempLinkedList->prox;
+            }
+            return;
+        }
+
+        arrayToRotate = arrayToRotate->prox;
     }
 }
 

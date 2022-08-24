@@ -25,7 +25,7 @@ ponto * pushPonto(int x, int y){
 	return pnt;
 }
 
-line * pushLine(int x1, int y1, int x2, int y2){
+line * pushLine(int x1, int y1, int x2, int y2, bool endPolygon=false){
 	line * lines;
 	lines = new line;
 	lines->x1 = x1;
@@ -33,6 +33,7 @@ line * pushLine(int x1, int y1, int x2, int y2){
 	lines->x2 = x2;
 	lines->y2 = y2;
 	lines->prox = everyLines;
+    lines->endPolygon = endPolygon;
 	everyLines = lines;
 	return lines;
 }
@@ -67,14 +68,24 @@ ponto * popPonto(){
 	return pnt;
 }
 
+void * popLines(int quantityLines){
+	while(pontos != NULL && quantityLines > 0){
+        printf("PAssou\n");
+		popLine();
+        quantityLines--;
+	}
+}
+
 void removeAllPoints(){
     while(pontos != NULL){
         popPonto();
     }
 }
 
-void bresenham(int x1,int y1,int x2,int y2){
-    pushLine(x1, y1, x2, y2);
+void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, bool endPolygon=false){
+    if(!callByTransformation){
+        pushLine(x1, y1, x2, y2, endPolygon);
+    }
     int delta_x = x2 - x1;
     int delta_y = y2 - y1;
     int distance = 2 * delta_y - delta_x;
@@ -144,11 +155,11 @@ void circumferenceRasterization(int radius, int x, int y){
     }
 }
 
-void firstOctaveReduction(int x1, int y1, int x2, int y2, bool callByTransformation=false){
+void firstOctaveReduction(int x1, int y1, int x2, int y2, bool callByTransformation=false, bool endPolygon=false){
     printf("Reducao %d %d\n", x1, y1);
     printf("Reducao %d %d\n", x2, y2);
     if(!callByTransformation){
-        pushLine(x1, y1, x2, y2);
+        pushLine(x1, y1, x2, y2, endPolygon);
     }
     bool declive = false;
     bool simetric = false;

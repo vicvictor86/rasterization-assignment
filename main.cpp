@@ -37,6 +37,9 @@ ponto centerCircle = {};
 int circleRadius = 0;
 
 queue<ponto> pointsToDrawnPolygonQueue;
+int sizeOfFreePolygon = 0;
+
+int sizeLastDrawnPolygon = 0;
 
 // Declaracoes forward das funcoes utilizadas
 void init(void);
@@ -172,9 +175,14 @@ void keyboard(unsigned char key, int x, int y){
             printf("Desenhar circulo\n");
         break;
         case 'd': 
-            rotation(everyLines, 45);
+            rotation(everyLines, -45, sizeLastDrawnPolygon);
             glutPostRedisplay();
-            printf("Rotacao do poligono\n");
+            printf("Rotacao do poligono para a esquerda\n");
+        break;
+        case 'a': 
+            rotation(everyLines, 45, sizeLastDrawnPolygon);
+            glutPostRedisplay();
+            printf("Rotacao do poligono para a direita\n");
         break;
         case 'x': 
             reflectionOverX(pontos);
@@ -192,7 +200,7 @@ void keyboard(unsigned char key, int x, int y){
             printf("Reflexao sobre a origem\n");
         break;
         case 'e': 
-            scale(everyLines, 2, 2);
+            scale(everyLines, 2, 2, sizeLastDrawnPolygon);
             glutPostRedisplay();
             printf("Escalonando o poligono\n");
         break;
@@ -265,6 +273,8 @@ void mouse(int button, int state, int x, int y)
                     } else {
                         registerPolygonPoint(x, y);
 
+                        sizeOfFreePolygon++;
+
                         glutPostRedisplay();
                     }
                 } else if(drawStatus == "CIRCLE"){
@@ -325,10 +335,11 @@ void defineVertexTriangle(){
 }
 
 void drawnTriangle(){
-    firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y);
+    firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, false, true);
     firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
     firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
     defineVertexTriangle();
+    sizeLastDrawnPolygon = 3;
 }
 
 void defineVertexSquare(){
@@ -343,11 +354,12 @@ void defineVertexSquare(){
 }
 
 void drawnSquare(){
-    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y);
+    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, false, true);
     firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
     firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
     firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
     defineVertexSquare();
+    sizeLastDrawnPolygon = 4;
 }
 
 // Funcao usada na funcao callback para desenhar na tela
@@ -362,10 +374,12 @@ void display(void){
             drawnTriangle();
             
         } else if(drawStatus == "LINE_BRESENHAM" && quantityClicks >= 2){
-            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true);
+            sizeLastDrawnPolygon = 1;
 
         } else if(drawStatus == "LINE_REDUCTION_OCTAVE" && quantityClicks >= 2){
-            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true);
+            sizeLastDrawnPolygon = 1;
 
         } else if(drawStatus == "SQUARE" && quantityClicks >= 2){
             drawnSquare();
@@ -375,8 +389,10 @@ void display(void){
             bool clickToClosePolygonY = abs(pointsToDrawnPolygonQueue.back().y - firstPointPolygon.y) < 15;
 
             if(clickToClosePolygonX && clickToClosePolygonY){
-                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y); 
+                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y, false, true); 
                 pointsToDrawnPolygonQueue.pop();
+                sizeLastDrawnPolygon = sizeOfFreePolygon;
+                sizeOfFreePolygon = 0;
 
             } else {
                 firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);

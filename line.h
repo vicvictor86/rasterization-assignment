@@ -5,4 +5,5 @@ struct line
 	int x2;
 	int y2;
 	line * prox;
+	bool endPolygon;
 };
