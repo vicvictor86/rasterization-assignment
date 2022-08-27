@@ -1,5 +1,7 @@
 #include "rasterizationAlgorithms.h"
 
+bool lastDrawnCircle = false;
+
 void translation(ponto * point, int Tx, int Ty){
     while(point != NULL){
         point->x = point->x + Tx;
@@ -63,7 +65,6 @@ ponto getCentroid(vector<line> lineVectors){
     return centroid;
 }
 
-
 void scaleCircle(int radius, int centerX, int centerY){
     ponto * tempArrayPoints = pontos;
 
@@ -113,7 +114,7 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
 
             removeAllPoints();
             while(tempLinkedList != NULL){
-                firstOctaveReduction(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
+                bresenham(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
                 tempLinkedList = tempLinkedList->prox;
             }
             return;
@@ -130,7 +131,7 @@ void rotation(line * arrayToRotate, int angle, int sizePolygon){
 
     int lastPointPolygonToModify = sizePolygon;
 
-    while(arrayToRotate != NULL){  
+    while(arrayToRotate != NULL && !lastDrawnCircle){  
         line actualLine = {arrayToRotate->x1, arrayToRotate->y1, arrayToRotate->x2, arrayToRotate->y2, arrayToRotate->prox, arrayToRotate->endPolygon};
         subPolygonArray.push_back(actualLine);
 
@@ -171,7 +172,7 @@ void rotation(line * arrayToRotate, int angle, int sizePolygon){
 
             removeAllPoints();
             while(tempLinkedList != NULL){
-                firstOctaveReduction(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
+                bresenham(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
                 tempLinkedList = tempLinkedList->prox;
             }
             return;
@@ -185,7 +186,7 @@ void shearX(line * arrayToShear, int S){
     while(arrayToShear != NULL){
         arrayToShear->x1 += S * arrayToShear->y1;
         arrayToShear->x2 += S * arrayToShear->y2;
-        firstOctaveReduction(arrayToShear->x1, arrayToShear->y1, arrayToShear->x2, arrayToShear->y2, true);
+        bresenham(arrayToShear->x1, arrayToShear->y1, arrayToShear->x2, arrayToShear->y2, true);
         printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
         printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;
@@ -196,7 +197,7 @@ void shearY(line * arrayToShear, int S){
     while(arrayToShear != NULL){
         arrayToShear->y1 += S * arrayToShear->x1;
         arrayToShear->y2 += S * arrayToShear->x2;
-        firstOctaveReduction( arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
+        bresenham( arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
         printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
         printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;
@@ -209,7 +210,7 @@ void shear(line * arrayToShear, int Sx, int Sy){
         arrayToShear->x2 += Sx * arrayToShear->y2;
         arrayToShear->y1 += Sy * arrayToShear->x1;
         arrayToShear->y2 += Sy * arrayToShear->x2;
-        firstOctaveReduction(arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
+        bresenham(arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
         printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
         printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;

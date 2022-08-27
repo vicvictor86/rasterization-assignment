@@ -33,7 +33,6 @@ ponto triangleVertices[3] = {};
 
 ponto centerCircle = {};
 int circleRadius = 0;
-bool lastDrawnCircle = false;
 
 queue<ponto> pointsToDrawnPolygonQueue;
 int sizeOfFreePolygon = 0;
@@ -313,9 +312,7 @@ void mouse(int button, int state, int x, int y)
                 }
 
                 if(readyToDraw){
-                    if(drawStatus == "CIRCLE"){
-                        lastDrawnCircle = true;
-                    }
+                    lastDrawnCircle = drawStatus == "CIRCLE" ? true : false;
 
                     glutPostRedisplay();
                     printf("Objeto rasterizado\n");
@@ -355,9 +352,9 @@ void defineVertexTriangle(){
 }
 
 void drawnTriangle(){
-    firstOctaveReduction(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, false, true);
-    firstOctaveReduction(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
-    firstOctaveReduction(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
+    bresenham(pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y, pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, false, true);
+    bresenham(pointsToDrawnTriangle[1].x, pointsToDrawnTriangle[1].y, pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y);
+    bresenham(pointsToDrawnTriangle[2].x, pointsToDrawnTriangle[2].y, pointsToDrawnTriangle[0].x, pointsToDrawnTriangle[0].y);
     defineVertexTriangle();
     sizeLastDrawnPolygon = 3;
 }
@@ -374,10 +371,10 @@ void defineVertexSquare(){
 }
 
 void drawnSquare(){
-    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, false, true);
-    firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
-    firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
-    firstOctaveReduction(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
+    bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, false, true);
+    bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y);
+    bresenham(pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, pointsToDrawnLine[1].x, pointsToDrawnLine[0].y);
+    bresenham(pointsToDrawnLine[1].x, pointsToDrawnLine[0].y, pointsToDrawnLine[0].x, pointsToDrawnLine[0].y);
     defineVertexSquare();
     sizeLastDrawnPolygon = 4;
 }
@@ -394,11 +391,11 @@ void display(void){
             drawnTriangle();
             
         } else if(drawStatus == "LINE_BRESENHAM" && quantityClicks >= 2){
-            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true);
+            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true, false);
             sizeLastDrawnPolygon = 1;
 
         } else if(drawStatus == "LINE_REDUCTION_OCTAVE" && quantityClicks >= 2){
-            firstOctaveReduction(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true);
+            bresenham(pointsToDrawnLine[0].x, pointsToDrawnLine[0].y, pointsToDrawnLine[1].x, pointsToDrawnLine[1].y, false, true);
             sizeLastDrawnPolygon = 1;
 
         } else if(drawStatus == "SQUARE" && quantityClicks >= 2){
@@ -409,13 +406,13 @@ void display(void){
             bool clickToClosePolygonY = abs(pointsToDrawnPolygonQueue.back().y - firstPointPolygon.y) < 15;
 
             if(clickToClosePolygonX && clickToClosePolygonY){
-                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y, false, true); 
+                bresenham(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, firstPointPolygon.x, firstPointPolygon.y, false, true); 
                 pointsToDrawnPolygonQueue.pop();
                 sizeLastDrawnPolygon = sizeOfFreePolygon;
                 sizeOfFreePolygon = 0;
 
             } else {
-                firstOctaveReduction(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);
+                bresenham(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);
             }
 
             pointsToDrawnPolygonQueue.pop();

@@ -5,6 +5,7 @@
 
 #include "ponto.h"
 #include "line.h"
+#include "reductionReturn.h"
 
 int width = 512, height = 512; //Largura e altura da janela
 const int widthTemp = 512, heightTemp = 512; 
@@ -104,10 +105,81 @@ void removeAllPoints(){
     }
 }
 
-void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, bool endPolygon=false){
+reductionReturn firstOctaveReduction(int x1, int y1, int x2, int y2, bool callByTransformation=false, bool endPolygon=false){
+    bool declive = false;
+    bool simetric = false;
+
+    int delta_x = x2 - x1;
+    int delta_y = y2 - y1;
+
+    int productDeltas = delta_x * delta_y;
+
+    if(productDeltas < 0){
+        y1 *= -1;
+        y2 *= -1;
+        delta_y = y2 - y1;
+        simetric = true;
+    }
+
+    bool deltaXMinorDeltaY = abs(delta_x) < abs(delta_y);
+    if(deltaXMinorDeltaY){
+        int aux1 = x1;
+        x1 = y1;
+        y1 = aux1;
+
+        int aux2 = x2;
+        x2 = y2;
+        y2 = aux2;
+
+        int auxDelta = delta_x;
+        delta_x = delta_y;
+        delta_y = auxDelta;
+
+        declive = true;
+    }
+
+    bool xFirstExtremityBiggerSecond = x1 > x2;
+    if(xFirstExtremityBiggerSecond){
+        int auxX = x1;
+        x1 = x2;
+        x2 = auxX;
+
+        int auxY = y1;
+        y1 = y2;
+        y2 = auxY;
+
+        delta_x = x2 - x1;
+        delta_y = y2 - y1;
+    }
+
+    // printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
+
+    reductionReturn lineReducted = {x1, y1, x2, y2, declive, simetric};
+    printf("Reducao %d %d\n", x1, y1);
+    printf("Reducao %d %d\n", x2, y2);
+
+    return lineReducted;
+}
+
+
+void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, bool endPolygon=false, bool needReduce=true){
     if(!callByTransformation){
         pushLine(x1, y1, x2, y2, endPolygon);
     }
+
+    bool declive = false;
+    bool simetric = false;
+
+    if(needReduce){
+        reductionReturn lineReducted = firstOctaveReduction(x1, y1, x2, y2);
+        x1 = lineReducted.x1;
+        y1 = lineReducted.y1;
+        x2 = lineReducted.x2;
+        y2 = lineReducted.y2;
+        declive = lineReducted.declive;
+        simetric = lineReducted.simetric;
+    }
+
     int delta_x = x2 - x1;
     int delta_y = y2 - y1;
     int distance = 2 * delta_y - delta_x;
@@ -117,6 +189,9 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
     
     int xi = x1;
     int yi = y1;
+
+    int definitiveXi = xi;
+    int definitiveYi = yi;
 
     bool firstExtremity = true;
     while(xi < x2){
@@ -130,8 +205,20 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
             xi++;
         }
 
-        pontos = pushPonto((int)xi, (int)yi);
-        // printf("xiyi(%d,%d)\n", xi, yi);
+        definitiveXi = xi;
+        definitiveYi = yi;
+
+        if(declive){
+            definitiveXi = yi;
+            definitiveYi = xi;
+        }
+
+        if(simetric){
+            definitiveYi *= -1;
+        }
+
+        pontos = pushPonto(definitiveXi, definitiveYi);
+        // printf("xiyi(%d,%d)\n", definitiveXi, definitiveYi);
 
         firstExtremity = false;
     }
@@ -202,101 +289,6 @@ void circumferenceRasterization(int radius, int x, int y){
         pontos = pushPonto(-yi + x, -xi + y);
         pontos = pushPonto(-yi + x, xi + y);
         pontos = pushPonto(-xi + x, yi + y);
-        firstExtremity = false;
-    }
-}
-
-void firstOctaveReduction(int x1, int y1, int x2, int y2, bool callByTransformation=false, bool endPolygon=false){
-    printf("Reducao %d %d\n", x1, y1);
-    printf("Reducao %d %d\n", x2, y2);
-    if(!callByTransformation){
-        pushLine(x1, y1, x2, y2, endPolygon);
-    }
-    bool declive = false;
-    bool simetric = false;
-
-    int delta_x = x2 - x1;
-    int delta_y = y2 - y1;
-
-    int productDeltas = delta_x * delta_y;
-
-    if(productDeltas < 0){
-        y1 *= -1;
-        y2 *= -1;
-        delta_y = y2 - y1;
-        simetric = true;
-    }
-
-    bool deltaXMinorDeltaY = abs(delta_x) < abs(delta_y);
-    if(deltaXMinorDeltaY){
-        int aux1 = x1;
-        x1 = y1;
-        y1 = aux1;
-
-        int aux2 = x2;
-        x2 = y2;
-        y2 = aux2;
-
-        int auxDelta = delta_x;
-        delta_x = delta_y;
-        delta_y = auxDelta;
-
-        declive = true;
-    }
-
-    bool xFirstExtremityBiggerSecond = x1 > x2;
-    if(xFirstExtremityBiggerSecond){
-        int auxX = x1;
-        x1 = x2;
-        x2 = auxX;
-
-        int auxY = y1;
-        y1 = y2;
-        y2 = auxY;
-
-        delta_x = x2 - x1;
-        delta_y = y2 - y1;
-    }
-
-    int distance = 2 * delta_y - delta_x;
-    int incrementE = 2 * delta_y;
-    int incrementNE = 2 * (delta_y - delta_x);
-
-    int xi = x1;
-    int yi = y1;
-
-    int tempXi = xi;
-    int tempYi = yi;
-
-    bool firstExtremity = true;
-    // printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
-
-    while(xi < x2){
-        if(!firstExtremity){
-            if(distance <= 0){
-                distance += incrementE;
-            }else {
-                distance += incrementNE;
-                yi++;
-            }
-            xi++;
-        }
-
-        if(declive){
-            tempXi = yi;
-            tempYi = xi;
-        } else {
-            tempXi = xi;
-            tempYi = yi;
-        }
-
-        if(simetric){
-            tempYi *= -1;
-        } 
-        
-        pontos = pushPonto(tempXi, tempYi);
-        // printf("xiyi(%d,%d)\n", tempXi, tempYi);
-
         firstExtremity = false;
     }
 }
