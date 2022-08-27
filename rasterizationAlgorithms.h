@@ -1,9 +1,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+#include <map>
 
 #include "ponto.h"
 #include "line.h"
+
+int width = 512, height = 512; //Largura e altura da janela
+const int widthTemp = 512, heightTemp = 512; 
 
 // Lista encadeada de pontos
 // indica o primeiro elemento da lista
@@ -12,18 +16,6 @@ ponto * pontos = NULL;
 // Lista encadeada de linhas
 // Indica a extremidade de cada reta criada
 line * everyLines = NULL;
-
-// Funcao para armazenar um ponto na lista
-// Armazena como uma Pilha (empilha)
-ponto * pushPonto(int x, int y){
-	ponto * pnt;
-	pnt = new ponto;
-	pnt->x = x;
-	pnt->y = y;
-	pnt->prox = pontos;
-	pontos = pnt;
-	return pnt;
-}
 
 line * pushLine(int x1, int y1, int x2, int y2, bool endPolygon=false){
 	line * lines;
@@ -49,10 +41,35 @@ line * popLine(){
 	return lines;
 }
 
+void * popLines(int quantityLines){
+	while(pontos != NULL && quantityLines > 0){
+        printf("PAssou\n");
+		popLine();
+        quantityLines--;
+	}
+}
+
 void removeAllLines(){
     while(everyLines != NULL){
         popLine();
     }
+}
+
+vector<ponto> pixels;
+
+// Funcao para armazenar um ponto na lista
+// Armazena como uma Pilha (empilha)
+ponto * pushPonto(int x, int y, float value=0){
+	ponto * pnt;
+	pnt = new ponto;
+	pnt->x = x;
+	pnt->y = y;
+	pnt->prox = pontos;
+	pontos = pnt;
+
+    pixels.push_back({x, y, NULL, value});
+    
+	return pnt;
 }
 
 // Funcao para desarmazenar um ponto na lista
@@ -68,12 +85,16 @@ ponto * popPonto(){
 	return pnt;
 }
 
-void * popLines(int quantityLines){
-	while(pontos != NULL && quantityLines > 0){
-        printf("PAssou\n");
-		popLine();
-        quantityLines--;
-	}
+//Funcao que desenha os pontos contidos em uma lista de pontos
+void drawPontos(){
+    ponto * pnt;
+    pnt = pontos;
+    glBegin(GL_POINTS); // Seleciona a primitiva GL_POINTS para desenhar
+        while(pnt != NULL){
+            glVertex2i(pnt->x,pnt->y);
+            pnt = pnt->prox;
+        }
+    glEnd();  // indica o fim do desenho
 }
 
 void removeAllPoints(){
@@ -113,6 +134,35 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
 
         firstExtremity = false;
     }
+}
+
+
+void floodFill(GLint x, GLint y, float * oldColor, float * newColor)
+{
+    float colorValue;
+    for(int i = 0; i < pixels.size(); i++){
+        if(pixels[i].x == x && pixels[i].y == y){
+            colorValue = pixels[i].value;
+        }
+    }
+	float color[] = {colorValue, colorValue, colorValue};
+	drawPontos();
+	if((color[0] != newColor[0] || color[1] != newColor[1] || color[2] != newColor[2]) )
+	{
+        // printf("%.2f %.2f %.2f\n", color[0], color[1], color[2]);
+		glColor3f(newColor[0], newColor[1], newColor[2]);
+		glBegin(GL_POINTS);
+		glVertex2i(x, y);
+		glEnd();
+		pushPonto(x, y);
+		glutSwapBuffers();
+		floodFill(x + 1, y, oldColor, newColor);
+		floodFill(x - 1, y, oldColor, newColor);
+		floodFill(x, y + 1, oldColor, newColor);
+		floodFill(x, y - 1, oldColor, newColor);
+
+	}
+	drawPontos();
 }
 
 void circumferenceRasterization(int radius, int x, int y){

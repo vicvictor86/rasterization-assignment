@@ -21,8 +21,6 @@ using namespace std;
 
 int quantityClicks = 0;
 
-int width = 512, height = 512; //Largura e altura da janela
-
 string drawStatus = "TRIANGLE";
 
 ponto pointsToDrawnTriangle[3] = {};
@@ -138,86 +136,91 @@ void keyboard(unsigned char key, int x, int y){
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
         break;
-        case 't': 
+        case 't': //Desenhar triangulos
             drawStatus = "TRIANGLE";
             resetDrawnInformations();
 
             printf("Desenhar triangulo\n");
         break;
-        case 'l': 
+        case 'l': //Desenhar linhas com bresenham
             drawStatus = "LINE_BRESENHAM";
             resetDrawnInformations();
 
             printf("Desenhar linha usando Bresenham\n");
         break;
-        case 'o': 
+        case 'o': //Desenhar linhas utilizando reducao ao primeiro octante
             drawStatus = "LINE_REDUCTION_OCTAVE";
             resetDrawnInformations();
 
             printf("Desenhar linha usando reducao ao primeiro octante \n");
         break;
-        case 's': 
+        case 's': //Desenhar quadrado
             drawStatus = "SQUARE";
             resetDrawnInformations();
 
             printf("Desenhar quadrado\n");
         break;
-        case 'p': 
+        case 'p': //Desenhar poligono
             drawStatus = "POLYGON";
             resetDrawnInformations();
 
             printf("Desenhar poligono\n");
         break;
-        case 'c': 
+        case 'c': //Desenhar circulo
             drawStatus = "CIRCLE";
             resetDrawnInformations();
 
             printf("Desenhar circulo\n");
         break;
-        case 'd': 
+        case 'd': //Rotaciona para a direita
             rotation(everyLines, -45, sizeLastDrawnPolygon);
             glutPostRedisplay();
             printf("Rotacao do poligono para a esquerda\n");
         break;
-        case 'a': 
+        case 'a': //Rotaciona para a esquerda
             rotation(everyLines, 45, sizeLastDrawnPolygon);
             glutPostRedisplay();
             printf("Rotacao do poligono para a direita\n");
         break;
-        case 'x': 
+        case 'x': //Reflexao sobre o eixo X
             reflectionOverX(pontos);
             glutPostRedisplay();
             printf("Reflexao sobre eixo x\n");
         break;
-        case 'y': 
+        case 'y': //Reflexao sobre o eixo Y
             reflectionOverY(pontos);
             glutPostRedisplay();
             printf("Reflexao sobre eixo y\n");
         break;
-        case 'z': 
+        case 'z': //Reflexao sobre a origem
             reflectionOverOrigin(pontos);
             glutPostRedisplay();
             printf("Reflexao sobre a origem\n");
         break;
-        case 'e': 
+        case 'e': //Usar a transformação de escala
             scale(everyLines, 2, 2, sizeLastDrawnPolygon);
             glutPostRedisplay();
             printf("Escalonando o poligono\n");
         break;
-        case 'v': 
+        case 'v': //Cisalhamento sobre o eixo X
             shearX(everyLines, 2);
             glutPostRedisplay();
             printf("Cisalhamento sobre eixo x\n");
         break;
-        case 'b': 
+        case 'b': //Cisalhamento sobre o eixo Y
             shearY(everyLines, 2);
             glutPostRedisplay();
             printf("Cisalhamento sobre eixo y\n");
         break;
-        case 'n': 
+        case 'n': //Cisalhamento sobre os eixos X e Y
             shear(everyLines, 2, 2);
             glutPostRedisplay();
             printf("Cisalhamento sobre eixo x e y\n");
+        break;
+        case 'm': //Cisalhamento sobre o eixo X e Y
+            drawStatus = "FLOOD_FILL";
+            glutPostRedisplay();
+            printf("Execucao do floodFill\n");
         break;
     }
 }
@@ -294,6 +297,12 @@ void mouse(int button, int state, int x, int y)
                         printf("Circulo com raio %d registrado\n", circleRadius);
                         readyToDraw = true;
                     }
+                } else if(drawStatus == "FLOOD_FILL"){
+                    float currentColor[3] = {1.0, 1.0, 1.0};
+                    float newColor[3] = {0.0, 0.0, 0.0};
+                    int yWithOffset = height - y;
+                    
+                    floodFill(x, yWithOffset, currentColor, newColor);
                 }
 
                 if(readyToDraw){
@@ -414,20 +423,3 @@ void display(void){
 
     glutSwapBuffers(); // manda o OpenGl renderizar as primitivas
 }
-
-//Funcao que desenha os pontos contidos em uma lista de pontos
-void drawPontos(){
-    ponto * pnt;
-    pnt = pontos;
-    glBegin(GL_POINTS); // Seleciona a primitiva GL_POINTS para desenhar
-        while(pnt != NULL){
-            glVertex2i(pnt->x,pnt->y);
-            pnt = pnt->prox;
-        }
-    glEnd();  // indica o fim do desenho
-}
-
-// void floodFill(int x, int y, double color, double newColor){
-//     float pixels[4];
-//     glReadPixels(x, y, width, height, GL_RGB, GL_FLOAT, pixels);
-// }

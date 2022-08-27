@@ -1,6 +1,6 @@
-#include <cmath>
-#include <vector>
 #include "rasterizationAlgorithms.h"
+
+bool lastDrawnCircle = false;
 
 void translation(ponto * point, int Tx, int Ty){
     while(point != NULL){
@@ -67,9 +67,11 @@ ponto getCentroid(vector<line> lineVectors){
 
 //Faz a transformação de escala apenas no último poligono desenhado
 void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
+    line * startLinkedList = arrayToScale;
+    line * tempLinkedList = startLinkedList;
+
     vector<line> subPolygonArray;
     int firstPointPolygonToModify = 0;
-    line * startLinkedList = arrayToScale;
 
     int lastPointPolygonToModify = sizePolygon;
 
@@ -77,7 +79,7 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
         line actualLine = {arrayToScale->x1, arrayToScale->y1, arrayToScale->x2, arrayToScale->y2, arrayToScale->prox, arrayToScale->endPolygon};
         subPolygonArray.push_back(actualLine);
 
-        line * tempLinkedList = startLinkedList;
+        tempLinkedList = startLinkedList;
         if(subPolygonArray.back().endPolygon){
             ponto centroid = getCentroid(subPolygonArray);
 
