@@ -3,4 +3,5 @@ struct ponto{
     int y;
     ponto * prox;
     float value;
+    bool firstPointPolygon;
 };

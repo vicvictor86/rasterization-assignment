@@ -33,6 +33,7 @@ ponto triangleVertices[3] = {};
 
 ponto centerCircle = {};
 int circleRadius = 0;
+bool lastDrawnCircle = false;
 
 queue<ponto> pointsToDrawnPolygonQueue;
 int sizeOfFreePolygon = 0;
@@ -198,7 +199,13 @@ void keyboard(unsigned char key, int x, int y){
             printf("Reflexao sobre a origem\n");
         break;
         case 'e': //Usar a transformação de escala
-            scale(everyLines, 2, 2, sizeLastDrawnPolygon);
+            if(lastDrawnCircle){
+                scaleCircle(circleRadius * 2,  centerCircle.x, centerCircle.y);
+                circleRadius *= 2;
+            } else {
+                scale(everyLines, 2, 2, sizeLastDrawnPolygon);
+            }
+
             glutPostRedisplay();
             printf("Escalonando o poligono\n");
         break;
@@ -301,11 +308,15 @@ void mouse(int button, int state, int x, int y)
                     float currentColor[3] = {1.0, 1.0, 1.0};
                     float newColor[3] = {0.0, 0.0, 0.0};
                     int yWithOffset = height - y;
-                    
+
                     floodFill(x, yWithOffset, currentColor, newColor);
                 }
 
                 if(readyToDraw){
+                    if(drawStatus == "CIRCLE"){
+                        lastDrawnCircle = true;
+                    }
+
                     glutPostRedisplay();
                     printf("Objeto rasterizado\n");
                 }

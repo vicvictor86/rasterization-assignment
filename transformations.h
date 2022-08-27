@@ -1,7 +1,5 @@
 #include "rasterizationAlgorithms.h"
 
-bool lastDrawnCircle = false;
-
 void translation(ponto * point, int Tx, int Ty){
     while(point != NULL){
         point->x = point->x + Tx;
@@ -65,11 +63,24 @@ ponto getCentroid(vector<line> lineVectors){
     return centroid;
 }
 
+
+void scaleCircle(int radius, int centerX, int centerY){
+    ponto * tempArrayPoints = pontos;
+
+    while(tempArrayPoints != NULL && tempArrayPoints->firstPointPolygon != true){
+        tempArrayPoints = tempArrayPoints->prox;
+        popPonto();
+    }
+
+    circumferenceRasterization(radius, centerX, centerY);
+}
+
 //Faz a transformação de escala apenas no último poligono desenhado
 void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
     line * startLinkedList = arrayToScale;
     line * tempLinkedList = startLinkedList;
 
+    
     vector<line> subPolygonArray;
     int firstPointPolygonToModify = 0;
 

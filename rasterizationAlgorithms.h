@@ -59,11 +59,12 @@ vector<ponto> pixels;
 
 // Funcao para armazenar um ponto na lista
 // Armazena como uma Pilha (empilha)
-ponto * pushPonto(int x, int y, float value=0){
+ponto * pushPonto(int x, int y, float value=0, bool firstPointPolygon=false){
 	ponto * pnt;
 	pnt = new ponto;
 	pnt->x = x;
 	pnt->y = y;
+    pnt->firstPointPolygon = firstPointPolygon;
 	pnt->prox = pontos;
 	pontos = pnt;
 
@@ -172,7 +173,7 @@ void circumferenceRasterization(int radius, int x, int y){
     int xi = 0;
     int yi = radius;
 
-    pontos = pushPonto(x, radius + y);
+    pontos = pushPonto(x, radius + y, 0, true);
     pontos = pushPonto(x, -radius + y);
     pontos = pushPonto(radius + x, y);
     pontos = pushPonto(-radius + x, y);
