@@ -22,6 +22,7 @@ using namespace std;
 int quantityClicks = 0;
 
 string drawStatus = "TRIANGLE";
+bool isDrawing = false;
 
 ponto pointsToDrawnTriangle[3] = {};
 ponto pointsToDrawnLine[2] = {};
@@ -50,8 +51,29 @@ void SpecialFuncInput(int key, int x, int y);
 // Funcao que percorre a lista de pontos desenhando-os na tela
 void drawPontos();
 
+void printApresentation(){
+    printf("Funcoes disponiveis(Todas as letras sao em minusculo):\n"
+    "t - Desenha triangulo\n"
+    "l - Desenha linha usando bresenham\n"
+    "o - Desenha linha usando reducao ao primeiro octante\n"
+    "s - Desenha quadrado\n"
+    "p - Desenha poligono\n"
+    "c - Desenha circulo\n"
+    "d - Rotaciona para a direita\n"
+    "a - Rotaciona para a esquerda\n"
+    "x - Reflexao sobre o eixo x\n"
+    "y - Reflexao sobre o eixo y\n"
+    "z - Reflexao sobre a origem\n"
+    "e - Escalona o ultimo poligono desenhado\n"
+    "v - Cisalhamento sobre o eixo x\n"
+    "b - Cisalhamento sobre o eixo y\n"
+    "n - Cisalhamento sobre o eixo x e y\n"
+    "f - Algoritmo flood fill sobre o poligono que o mouse clicar dentro\n");
+}
+
 // Funcao Principal do C
 int main(int argc, char** argv){
+    printApresentation();
     printf("Desenhar triangulo\n");
     glutInit(&argc, argv); // Passagens de parametro C para o glut
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor utilizado
@@ -106,6 +128,10 @@ void resetDrawnInformations() {
 }
 
 void SpecialFuncInput(int key, int x, int y){
+    if(isDrawing){
+        printf("Termine de desenhar para executar essa acao\n");
+        return;
+    }
     switch(key) {
         case GLUT_KEY_UP:
             translation(pontos, 0, 20);
@@ -132,6 +158,10 @@ void SpecialFuncInput(int key, int x, int y){
 
 // Funcao usada na funcao callback para utilizacao das teclas normais do teclado
 void keyboard(unsigned char key, int x, int y){
+    if(isDrawing){
+        printf("Termine de desenhar para executar essa acao\n");
+        return;
+    }
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
@@ -223,7 +253,7 @@ void keyboard(unsigned char key, int x, int y){
             glutPostRedisplay();
             printf("Cisalhamento sobre eixo x e y\n");
         break;
-        case 'm': //Cisalhamento sobre o eixo X e Y
+        case 'f': //Algoritmo FloodFill
             drawStatus = "FLOOD_FILL";
             glutPostRedisplay();
             printf("Execucao do floodFill\n");
@@ -264,6 +294,7 @@ void mouse(int button, int state, int x, int y)
         case GLUT_LEFT_BUTTON:
             if (state == GLUT_DOWN) {
                 bool readyToDraw = false;
+                isDrawing = true;
                 if(drawStatus == "TRIANGLE" && quantityClicks < 3){
                     registerPoint(pointsToDrawnTriangle, x, y);
                     readyToDraw = quantityClicks >= 3 ? true : false;
@@ -313,6 +344,8 @@ void mouse(int button, int state, int x, int y)
 
                 if(readyToDraw){
                     lastDrawnCircle = drawStatus == "CIRCLE" ? true : false;
+
+                    isDrawing = false;
 
                     glutPostRedisplay();
                     printf("Objeto rasterizado\n");
@@ -410,6 +443,7 @@ void display(void){
                 pointsToDrawnPolygonQueue.pop();
                 sizeLastDrawnPolygon = sizeOfFreePolygon;
                 sizeOfFreePolygon = 0;
+                isDrawing = false;
 
             } else {
                 bresenham(pointsToDrawnPolygonQueue.front().x, pointsToDrawnPolygonQueue.front().y, pointsToDrawnPolygonQueue.back().x, pointsToDrawnPolygonQueue.back().y);
@@ -419,7 +453,6 @@ void display(void){
 
         } else if (drawStatus == "CIRCLE") {
             circumferenceRasterization(circleRadius, centerCircle.x, centerCircle.y);
-            // circumferenceRasterization(8, 0, 0);
         } else {
             printf("Quantidade de pontos marcados insuficiente\n");
             return;

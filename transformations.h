@@ -81,7 +81,6 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
     line * startLinkedList = arrayToScale;
     line * tempLinkedList = startLinkedList;
 
-    
     vector<line> subPolygonArray;
     int firstPointPolygonToModify = 0;
 
@@ -112,7 +111,7 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
             tempLinkedList = startLinkedList;
             pointToModify = 0;
 
-            removeAllPoints();
+            // removeAllPoints();
             while(tempLinkedList != NULL){
                 bresenham(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
                 tempLinkedList = tempLinkedList->prox;
@@ -187,8 +186,6 @@ void shearX(line * arrayToShear, int S){
         arrayToShear->x1 += S * arrayToShear->y1;
         arrayToShear->x2 += S * arrayToShear->y2;
         bresenham(arrayToShear->x1, arrayToShear->y1, arrayToShear->x2, arrayToShear->y2, true);
-        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
-        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;
     }
 }
@@ -198,8 +195,6 @@ void shearY(line * arrayToShear, int S){
         arrayToShear->y1 += S * arrayToShear->x1;
         arrayToShear->y2 += S * arrayToShear->x2;
         bresenham( arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
-        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
-        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;
     }
 }
@@ -211,8 +206,6 @@ void shear(line * arrayToShear, int Sx, int Sy){
         arrayToShear->y1 += Sy * arrayToShear->x1;
         arrayToShear->y2 += Sy * arrayToShear->x2;
         bresenham(arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
-        printf("%d %d\n", arrayToShear->x2, arrayToShear->y2);
-        printf("%d %d\n", arrayToShear->x1, arrayToShear->y1);
         arrayToShear = arrayToShear->prox;
     }
 }

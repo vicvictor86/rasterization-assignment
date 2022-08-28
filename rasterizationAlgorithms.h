@@ -44,7 +44,6 @@ line * popLine(){
 
 void * popLines(int quantityLines){
 	while(pontos != NULL && quantityLines > 0){
-        printf("PAssou\n");
 		popLine();
         quantityLines--;
 	}
@@ -105,6 +104,16 @@ void removeAllPoints(){
     }
 }
 
+void removeLastPointsPolygon(){
+    while(pontos != NULL){
+        if(pontos->firstPointPolygon == true){
+            popPonto();
+            break;
+        }
+        popPonto();
+    }
+}
+
 reductionReturn firstOctaveReduction(int x1, int y1, int x2, int y2, bool callByTransformation=false, bool endPolygon=false){
     bool declive = false;
     bool simetric = false;
@@ -155,12 +164,11 @@ reductionReturn firstOctaveReduction(int x1, int y1, int x2, int y2, bool callBy
     // printf("Primeiro xiyi(%d,%d)\n", tempXi, tempYi);
 
     reductionReturn lineReducted = {x1, y1, x2, y2, declive, simetric};
-    printf("Reducao %d %d\n", x1, y1);
-    printf("Reducao %d %d\n", x2, y2);
+    // printf("Reducao %d %d\n", x1, y1);
+    // printf("Reducao %d %d\n", x2, y2);
 
     return lineReducted;
 }
-
 
 void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, bool endPolygon=false, bool needReduce=true){
     if(!callByTransformation){
@@ -217,7 +225,7 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
             definitiveYi *= -1;
         }
 
-        pontos = pushPonto(definitiveXi, definitiveYi);
+        pontos = pushPonto(definitiveXi, definitiveYi, 0, firstExtremity);
         // printf("xiyi(%d,%d)\n", definitiveXi, definitiveYi);
 
         firstExtremity = false;
