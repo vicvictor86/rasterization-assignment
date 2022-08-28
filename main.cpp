@@ -343,6 +343,7 @@ void mouse(int button, int state, int x, int y)
                     int yWithOffset = height - y;
 
                     floodFill(x, yWithOffset, currentColor, newColor);
+                    isDrawing = false;
                 }
 
                 if(readyToDraw){

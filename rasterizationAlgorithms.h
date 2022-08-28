@@ -229,13 +229,12 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
             definitiveYi *= -1;
         }
 
-        pontos = pushPonto(definitiveXi, definitiveYi, 0, firstExtremity);
+        pontos = pushPonto(definitiveXi, definitiveYi, 0.0, firstExtremity);
         // printf("xiyi(%d,%d)\n", definitiveXi, definitiveYi);
 
         firstExtremity = false;
     }
 }
-
 
 void floodFill(GLint x, GLint y, float * oldColor, float * newColor)
 {

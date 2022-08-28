@@ -13,8 +13,10 @@ void translation(ponto * point, int Tx, int Ty){
         linesToTranslate = linesToTranslate->prox;
     }
     while(point != NULL){
+        pixelsMap[point->x][point->y].value = 1;
         point->x = point->x + Tx;
         point->y = point->y + Ty;
+        pixelsMap[point->x][point->y].value = 0;
         point = point->prox;
     }
 }
@@ -107,6 +109,8 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
             int pointToModify = 0;
             while(tempLinkedList != NULL){
                 if(pointToModify >= firstPointPolygonToModify && pointToModify < lastPointPolygonToModify){
+                    pixelsMap[tempLinkedList->x1][tempLinkedList->y1].value = 1;
+                    pixelsMap[tempLinkedList->x2][tempLinkedList->y2].value = 1;
                     tempLinkedList->x1 *= Sx;
                     tempLinkedList->y1 *= Sy;
                     tempLinkedList->x2 *= Sx;
@@ -164,6 +168,8 @@ void rotation(line * arrayToRotate, int angle, int sizePolygon){
                     double rotationX2 = x2 * cos(degreesToRadian) - y2 * sin(degreesToRadian);
                     double rotationY2 = x2 * sin(degreesToRadian) + y2 * cos(degreesToRadian);
 
+                    pixelsMap[tempLinkedList->x1][tempLinkedList->y1].value = 1;
+                    pixelsMap[tempLinkedList->x2][tempLinkedList->y2].value = 1;
                     tempLinkedList->x1 = round(rotationX1);
                     tempLinkedList->y1 = round(rotationY1);
                     tempLinkedList->x2 = round(rotationX2);
@@ -192,6 +198,8 @@ void rotation(line * arrayToRotate, int angle, int sizePolygon){
 
 void shearX(line * arrayToShear, int S){
     while(arrayToShear != NULL){
+        pixelsMap[arrayToShear->x1][arrayToShear->y1].value = 1;
+        pixelsMap[arrayToShear->x2][arrayToShear->y2].value = 1;
         arrayToShear->x1 += S * arrayToShear->y1;
         arrayToShear->x2 += S * arrayToShear->y2;
         bresenham(arrayToShear->x1, arrayToShear->y1, arrayToShear->x2, arrayToShear->y2, true);
@@ -201,6 +209,8 @@ void shearX(line * arrayToShear, int S){
 
 void shearY(line * arrayToShear, int S){
     while(arrayToShear != NULL){
+        pixelsMap[arrayToShear->x1][arrayToShear->y1].value = 1;
+        pixelsMap[arrayToShear->x2][arrayToShear->y2].value = 1;
         arrayToShear->y1 += S * arrayToShear->x1;
         arrayToShear->y2 += S * arrayToShear->x2;
         bresenham( arrayToShear->x2, arrayToShear->y2, arrayToShear->x1, arrayToShear->y1, true);
@@ -210,6 +220,8 @@ void shearY(line * arrayToShear, int S){
 
 void shear(line * arrayToShear, int Sx, int Sy){
     while(arrayToShear != NULL){
+        pixelsMap[arrayToShear->x1][arrayToShear->y1].value = 1;
+        pixelsMap[arrayToShear->x2][arrayToShear->y2].value = 1;
         arrayToShear->x1 += Sx * arrayToShear->y1;
         arrayToShear->x2 += Sx * arrayToShear->y2;
         arrayToShear->y1 += Sy * arrayToShear->x1;
@@ -221,6 +233,7 @@ void shear(line * arrayToShear, int Sx, int Sy){
 
 void reflectionOverX(ponto * arrayToReflect){
     while(arrayToReflect != NULL){
+        pixelsMap[arrayToReflect->x][arrayToReflect->y].value = 1;
         arrayToReflect->y *= -1;
         arrayToReflect = arrayToReflect->prox;
     }
@@ -228,6 +241,7 @@ void reflectionOverX(ponto * arrayToReflect){
 
 void reflectionOverY(ponto * arrayToReflect){
     while(arrayToReflect != NULL){
+        pixelsMap[arrayToReflect->x][arrayToReflect->y].value = 1;
         arrayToReflect->x *= -1;
         arrayToReflect = arrayToReflect->prox;
     }
@@ -235,6 +249,7 @@ void reflectionOverY(ponto * arrayToReflect){
 
 void reflectionOverOrigin(ponto * arrayToReflect){
     while(arrayToReflect != NULL){
+        pixelsMap[arrayToReflect->x][arrayToReflect->y].value = 1;
         arrayToReflect->x *= -1;
         arrayToReflect->y *= -1;
         arrayToReflect = arrayToReflect->prox;
