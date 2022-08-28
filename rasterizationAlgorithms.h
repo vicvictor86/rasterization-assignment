@@ -83,6 +83,7 @@ ponto * popPonto(){
 	ponto * pnt;
 	pnt = NULL;
 	if(pontos != NULL){
+        pixelsMap[pontos->x][pontos->y].value = 1;
 		pnt = pontos->prox;
 		delete pontos;
 		pontos = pnt;
