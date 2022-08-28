@@ -68,7 +68,8 @@ void printApresentation(){
     "v - Cisalhamento sobre o eixo x\n"
     "b - Cisalhamento sobre o eixo y\n"
     "n - Cisalhamento sobre o eixo x e y\n"
-    "f - Algoritmo flood fill sobre o poligono que o mouse clicar dentro\n");
+    "f - Algoritmo flood fill sobre o poligono que o mouse clicar dentro\n"
+    "Botao direito do mouse - Limpa a tela\n");
 }
 
 // Funcao Principal do C
@@ -132,6 +133,7 @@ void SpecialFuncInput(int key, int x, int y){
         printf("Termine de desenhar para executar essa acao\n");
         return;
     }
+
     switch(key) {
         case GLUT_KEY_UP:
             translation(pontos, 0, 20);
@@ -162,6 +164,7 @@ void keyboard(unsigned char key, int x, int y){
         printf("Termine de desenhar para executar essa acao\n");
         return;
     }
+
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
         case 27: // codigo ASCII da tecla ESC
             exit(0); // comando pra finalizacao do programa
@@ -359,6 +362,7 @@ void mouse(int button, int state, int x, int y)
                     removeAllLines();
 
                     quantityClicks = 0;
+                    sizeLastDrawnPolygon = 0;
 
                     clearQueue(&pointsToDrawnPolygonQueue);
                     

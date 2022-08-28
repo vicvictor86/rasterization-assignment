@@ -3,6 +3,15 @@
 bool lastDrawnCircle = false;
 
 void translation(ponto * point, int Tx, int Ty){
+    line * linesToTranslate = everyLines;
+    while(linesToTranslate != NULL){
+        linesToTranslate->x1 = linesToTranslate->x1 + Tx;
+        linesToTranslate->y1 = linesToTranslate->y1 + Ty;
+        linesToTranslate->x2 = linesToTranslate->x2 + Tx;
+        linesToTranslate->y2 = linesToTranslate->y2 + Ty;
+
+        linesToTranslate = linesToTranslate->prox;
+    }
     while(point != NULL){
         point->x = point->x + Tx;
         point->y = point->y + Ty;
@@ -111,7 +120,7 @@ void scale(line * arrayToScale, int Sx, int Sy, int sizePolygon){
             tempLinkedList = startLinkedList;
             pointToModify = 0;
 
-            // removeAllPoints();
+            removeAllPoints();
             while(tempLinkedList != NULL){
                 bresenham(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
                 tempLinkedList = tempLinkedList->prox;

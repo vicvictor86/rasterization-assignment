@@ -55,11 +55,15 @@ void removeAllLines(){
     }
 }
 
-vector<ponto> pixels;
+struct defaultValueToBackground{
+    float value = 1;
+};
+
+map<int, map<int, defaultValueToBackground>> pixelsMap;
 
 // Funcao para armazenar um ponto na lista
 // Armazena como uma Pilha (empilha)
-ponto * pushPonto(int x, int y, float value=0, bool firstPointPolygon=false){
+ponto * pushPonto(int x, int y, float value=0.0, bool firstPointPolygon=false){
 	ponto * pnt;
 	pnt = new ponto;
 	pnt->x = x;
@@ -68,7 +72,7 @@ ponto * pushPonto(int x, int y, float value=0, bool firstPointPolygon=false){
 	pnt->prox = pontos;
 	pontos = pnt;
 
-    pixels.push_back({x, y, NULL, value});
+    pixelsMap[x][y].value = value;
     
 	return pnt;
 }
@@ -236,28 +240,27 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
 void floodFill(GLint x, GLint y, float * oldColor, float * newColor)
 {
     float colorValue;
-    for(int i = 0; i < pixels.size(); i++){
-        if(pixels[i].x == x && pixels[i].y == y){
-            colorValue = pixels[i].value;
-        }
-    }
+    colorValue = pixelsMap[x][y].value;
 	float color[] = {colorValue, colorValue, colorValue};
+
 	drawPontos();
+
 	if((color[0] != newColor[0] || color[1] != newColor[1] || color[2] != newColor[2]) )
 	{
-        // printf("%.2f %.2f %.2f\n", color[0], color[1], color[2]);
 		glColor3f(newColor[0], newColor[1], newColor[2]);
 		glBegin(GL_POINTS);
-		glVertex2i(x, y);
+		    glVertex2i(x, y);
 		glEnd();
+
 		pushPonto(x, y);
 		glutSwapBuffers();
+
 		floodFill(x + 1, y, oldColor, newColor);
 		floodFill(x - 1, y, oldColor, newColor);
 		floodFill(x, y + 1, oldColor, newColor);
 		floodFill(x, y - 1, oldColor, newColor);
-
 	}
+
 	drawPontos();
 }
 
