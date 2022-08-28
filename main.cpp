@@ -53,6 +53,8 @@ void drawPontos();
 // Funcao Principal do C
 int main(int argc, char** argv){
     printf("Desenhar triangulo\n");
+    vector<line> testando = {{2,3, 7,1}, {7,1, 13,5}, {13,5, 13,11}, {13,11, 7, 7}, {7,7, 2, 9}, {2,9, 2,3}};
+    createTableEdges(testando);
     glutInit(&argc, argv); // Passagens de parametro C para o glut
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB); // Selecao do Modo do Display e do Sistema de cor utilizado
     glutInitWindowSize (width, height);  // Tamanho da janela do OpenGL

@@ -6,6 +6,7 @@
 #include "ponto.h"
 #include "line.h"
 #include "reductionReturn.h"
+#include "edgesCells.h"
 
 int width = 512, height = 512; //Largura e altura da janela
 const int widthTemp = 512, heightTemp = 512; 
@@ -161,7 +162,6 @@ reductionReturn firstOctaveReduction(int x1, int y1, int x2, int y2, bool callBy
     return lineReducted;
 }
 
-
 void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, bool endPolygon=false, bool needReduce=true){
     if(!callByTransformation){
         pushLine(x1, y1, x2, y2, endPolygon);
@@ -223,7 +223,6 @@ void bresenham(int x1,int y1,int x2,int y2, bool callByTransformation=false, boo
         firstExtremity = false;
     }
 }
-
 
 void floodFill(GLint x, GLint y, float * oldColor, float * newColor)
 {
@@ -334,3 +333,93 @@ void retaImediata(double x1,double y1,double x2,double y2){
     }
 }
 
+bool compareEdges(edgesCells e1, edgesCells e2){
+    return e1.yMin < e2.yMin;
+}
+
+void createTableEdges(vector<line> lineVectors){
+    vector<edgesCells> insideYs;
+    map<int, vector<edgesCells>> tableEdges;
+
+    for(int i = 0; i < lineVectors.size(); i++){
+        int yMin = min(lineVectors[i].y1, lineVectors[i].y2);
+        int yMax = max(lineVectors[i].y1, lineVectors[i].y2);
+        double xOfYmin = yMin == lineVectors[i].y1 ? lineVectors[i].x1 : lineVectors[i].x2;
+
+        int deltaX = lineVectors[i].x2 - lineVectors[i].x1;
+        int deltaY = lineVectors[i].y2 - lineVectors[i].y1;
+        double inverseM = (double)deltaX / (double)deltaY;
+
+        insideYs.push_back({yMax, xOfYmin, inverseM, yMin});
+
+    }
+    sort(insideYs.begin(), insideYs.end(), compareEdges);
+
+    for (int i = 0; i < insideYs.size(); i++) {
+        vector<edgesCells> temp;
+        int tempMinY = insideYs[i].yMin;
+        printf("%d %.2f %.2f\n", insideYs[i].yMax, insideYs[i].xOfYmin, insideYs[i].angularCoefficientInverse);
+        for (int j = i; j <= insideYs.size(); j++) {
+            if (insideYs[j].yMin == tempMinY) {
+                temp.push_back(insideYs[j]);
+            } else {
+                i = j - 1;
+                break;
+            }
+        }
+        tableEdges[tempMinY] = temp;
+    }
+
+    for (int i = 0; i < tableEdges.size(); i++) {
+        for (int j = 0; j < tableEdges[i].size(); j++) {
+            printf("%d\n", tableEdges.at(i).at(j).yMax);
+        }
+    }
+    // printf("%d\n", tableEdges.at(7).at(1).yMax);
+
+}
+
+// void polygonFill(line * polygonsToFill){
+//     line * startLinkedList = polygonsToFill;
+//     line * tempLinkedList = startLinkedList;
+    
+//     vector<line> subPolygonArray;
+//     int firstPointPolygonToModify = 0;
+
+//     int lastPointPolygonToModify = sizePolygon;
+
+//     while(polygonsToFill != NULL){
+//         line actualLine = {polygonsToFill->x1, polygonsToFill->y1, polygonsToFill->x2, polygonsToFill->y2, polygonsToFill->prox, polygonsToFill->endPolygon};
+//         subPolygonArray.push_back(actualLine);
+
+//         tempLinkedList = startLinkedList;
+//         if(subPolygonArray.back().endPolygon){
+
+//             int pointToModify = 0;
+//             while(tempLinkedList != NULL){
+//                 if(pointToModify >= firstPointPolygonToModify && pointToModify < lastPointPolygonToModify){
+//                     tempLinkedList->x1 *= Sx;
+//                     tempLinkedList->y1 *= Sy;
+//                     tempLinkedList->x2 *= Sx;
+//                     tempLinkedList->y2 *= Sy;
+//                     pointToModify++;
+//                 }
+//                 tempLinkedList = tempLinkedList->prox;
+//             }
+//             translationLine(startLinkedList, centroid.x, centroid.y, firstPointPolygonToModify, lastPointPolygonToModify);
+            
+//             tempLinkedList = startLinkedList;
+//             pointToModify = 0;
+
+//             removeAllPoints();
+//             while(tempLinkedList != NULL){
+//                 bresenham(tempLinkedList->x1, tempLinkedList->y1, tempLinkedList->x2, tempLinkedList->y2, true);
+//                 tempLinkedList = tempLinkedList->prox;
+//             }
+
+//             subPolygonArray.clear();
+//         }
+
+//         polygonsToFill = polygonsToFill->prox;
+//     }
+// }
